@@ -1,80 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-
     <title>Workout Setup</title>
-
     <link rel="stylesheet" href="css/style.css">
-
 </head>
 
 <body>
 
-    <div class="setup-container">
+<div class="setup-container">
 
-        <h1 class="setup-title">Workout Setup</h1>
+<div>
 
-        <div class="setup-card">
+<h1 class="setup-title">Workout Setup</h1>
 
-        <div class="form-group">
-            <label>Select Exercises</label>
+<div id="lastWorkoutCard" class="setup-card" style="margin-bottom:20px; display:none;">
+<h2>Last Workout</h2>
+<div id="lastWorkoutContent"></div>
+</div>
 
-            <div class="exercise-list">
+<div class="setup-card">
 
-                <label>
-                    <input type="checkbox" value="Squats">
-                    Squats
-                </label>
+<div class="form-group">
 
-                <label>
-                    <input type="checkbox" value="Arm Curl">
-                    Arm Curl
-                </label>
+<label>Select Exercises</label>
 
-                <label>
-                    <input type="checkbox" value="Ankle Lift">
-                    Ankle Lift
-                </label>
+<div class="exercise-list">
 
-            </div>
-        </div>
+<label>
+<input type="checkbox" value="Squats">
+Squats
+</label>
 
+<label>
+<input type="checkbox" value="Arm Curl">
+Arm Curl
+</label>
 
-            <div class="form-group">
-                <label for="sets">Number of Sets</label>
+<label>
+<input type="checkbox" value="Ankle Lift">
+Ankle Lift
+</label>
 
-                <input
-                    type="number"
-                    id="sets"
-                    min="1"
-                    max="10"
-                    value="4"
-                >
-            </div>
+</div>
 
+</div>
 
-            <div class="form-group">
-                <label for="targetReps">Reps per Set</label>
+<div id="exerciseConfig" class="exercise-config"></div>
 
-                <input
-                    type="number"
-                    id="targetReps"
-                    min="1"
-                    max="50"
-                    value="12"
-                >
-            </div>
+<button id="startWorkoutBtn" class="start-btn">
+Start Workout
+</button>
 
+</div>
 
-            <button id="startWorkoutBtn" class="start-btn">
-                Start Workout
-            </button>
+</div>
 
-        </div>
+</div>
 
-    </div>
-
-    <script src="js/setup.js"></script>
+<script src="js/setup.js"></script>
 
 </body>
 </html>

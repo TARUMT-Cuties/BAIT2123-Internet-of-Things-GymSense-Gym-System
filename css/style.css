@@ -7,9 +7,8 @@ body {
     color: white;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
 }
-
-
 
 /* ---------- Dashboard ---------- */
 
@@ -271,13 +270,73 @@ header {
 .setup-container {
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
+    align-items: flex-start;
+    padding-top: 60px;
 }
 
 .setup-title {
     text-align: center;
     margin-bottom: 20px;
+}
+
+.exercise-config {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.exercise-config .form-group {
+    background: #1c1d3a;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.sets {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sets div {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sets input {
+    width: 80px;
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    background: #11122a;
+    color: white;
+}
+
+.sets button {
+    margin-top: 8px;
+}
+
+.addSet, .removeSet{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.addSet{
+    margin-top:10px;
+    background:linear-gradient(135deg,#8aa2ff,#6be1ff);
+    color:white;
+}
+
+.removeSet{
+    margin-top:8px;
+    background:linear-gradient(135deg,#ff8bd6,#ff6b6b);
+    color:white;
 }
 
 .setup-card {
