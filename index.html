@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gym IoT Dashboard</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <aside class="sidebar">
+        <h2>GymSense</h2>
+
+        <ul>
+            <li class="active">Dashboard</li>
+            <li>Workout</li>
+            <li>Analytics</li>
+            <li>History</li>
+            <li>Settings</li>
+        </ul>
+    </aside>
+
+
+    <main class="main">
+
+        <header class="header">
+            <h1>Workout Dashboard</h1>
+            <div class="profile">
+                <span>Yuki</span>
+            </div>
+        </header>
+
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Total Reps Today</h3>
+                <p id="reps">24</p>
+            </div>
+
+            <div class="card">
+                <h3>Calories Burned</h3>
+                <p id="calories">130</p>
+            </div>
+
+            <div class="card">
+                <h3>Current Exercise</h3>
+                <p id="exercise">Squats</p>
+            </div>
+
+        </section>
+
+
+        <section class="charts">
+
+            <div class="chart-card">
+                <h3>Weekly Reps</h3>
+                <canvas id="repsChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Calories Trend</h3>
+                <canvas id="calorieChart"></canvas>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="js/charts.js"></script>
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>
