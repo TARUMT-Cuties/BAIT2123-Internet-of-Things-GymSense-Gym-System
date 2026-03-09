@@ -1,21 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const exerciseTotals = {}
     const workouts = JSON.parse(localStorage.getItem("workouts")) || []
     const weeklyData = [0,0,0,0,0,0,0]
-    const exerciseTotals = {}
 
     workouts.forEach(workout => {
 
+        const date = new Date(workout.date)
+        const day = date.getDay()
         const exercises = workout.exercises || {}
 
-        Object.keys(exercises).forEach(name => {
+        let sessionReps = 0
 
+        Object.values(exercises).forEach(reps => {
+            sessionReps += reps
+        })
+
+
+        Object.entries(exercises).forEach(([name, reps]) => {
             if (!exerciseTotals[name]) {
                 exerciseTotals[name] = 0
             }
 
-            exerciseTotals[name] += exercises[name]
-
+            exerciseTotals[name] += reps
         })
+
+        weeklyData[day] += sessionReps
 
     })
 
