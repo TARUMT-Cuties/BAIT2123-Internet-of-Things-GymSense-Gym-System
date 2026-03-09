@@ -64,6 +64,9 @@ exerciseCheckboxes.forEach(checkbox => {
         const headerRow = document.createElement("div")
         headerRow.className = "setHeader"
 
+        const setLabel = document.createElement("span")
+        setLabel.textContent = ""
+
         const spacer = document.createElement("span")
         spacer.textContent = ""
 
@@ -73,9 +76,13 @@ exerciseCheckboxes.forEach(checkbox => {
         const weightLabel = document.createElement("span")
         weightLabel.textContent = "Weight"
 
-        headerRow.appendChild(spacer)
+        const deleteSpacer = document.createElement("span")
+        deleteSpacer.textContent = ""
+
+        headerRow.appendChild(setLabel)
         headerRow.appendChild(repsLabel)
         headerRow.appendChild(weightLabel)
+        headerRow.appendChild(deleteSpacer)
 
         setsContainer.appendChild(headerRow)
 
