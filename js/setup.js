@@ -37,6 +37,65 @@ if (lastWorkout) {
 
 }
 
+const repeatBtn = document.getElementById("repeatWorkoutBtn")
+
+if (repeatBtn && lastWorkout) {
+
+    repeatBtn.addEventListener("click", () => {
+
+        exerciseConfig.innerHTML = ""
+
+        lastWorkout.forEach(exercise => {
+
+            const checkbox =
+                document.querySelector(`input[value="${exercise.exercise}"]`)
+
+            if (checkbox) checkbox.checked = true
+
+            const container = document.createElement("div")
+            container.className = "form-group"
+            container.id = `config-${exercise.exercise}`
+
+            const title = document.createElement("h3")
+            title.textContent = exercise.exercise
+
+            const setsContainer = document.createElement("div")
+            setsContainer.className = "sets"
+
+            const headerRow = document.createElement("div")
+            headerRow.className = "setHeader"
+
+            headerRow.innerHTML = `
+                <span></span>
+                <span>Reps</span>
+                <span>Weight</span>
+                <span></span>
+            `
+
+            setsContainer.appendChild(headerRow)
+
+            exercise.sets.forEach(set => {
+                addSetRow(setsContainer, set.reps, set.weight)
+            })
+
+            const addButton = document.createElement("button")
+            addButton.textContent = "Add Set"
+            addButton.className = "addSet"
+
+            addButton.onclick = () => addSetRow(setsContainer)
+
+            container.appendChild(title)
+            container.appendChild(setsContainer)
+            container.appendChild(addButton)
+
+            exerciseConfig.appendChild(container)
+
+        })
+
+    })
+
+}
+
 exerciseCheckboxes.forEach(checkbox => {
 
     checkbox.addEventListener("change", () => {

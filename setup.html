@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Workout Setup</title>
     <link rel="stylesheet" href="css/style.css">
@@ -7,57 +8,65 @@
 
 <body>
 
-<div class="setup-container">
+    <div class="setup-container">
 
-<div>
+        <div>
 
-<h1 class="setup-title">Workout Setup</h1>
+            <h1 class="setup-title">Workout Setup</h1>
 
-<div id="lastWorkoutCard" class="setup-card" style="margin-bottom:20px; display:none;">
-<h2>Last Workout</h2>
-<div id="lastWorkoutContent"></div>
-</div>
+            <div id="lastWorkoutCard" class="setup-card" style="margin-bottom:20px; display:none;">
 
-<div class="setup-card">
+                <h2>Last Workout</h2>
 
-<div class="form-group">
+                <div id="lastWorkoutContent"></div>
 
-<label>Select Exercises</label>
+                <button id="repeatWorkoutBtn" class="start-btn">
+                    Repeat Last Workout
+                </button>
 
-<div class="exercise-list">
+            </div>
 
-<label>
-<input type="checkbox" value="Squats">
-Squats
-</label>
+            <div class="setup-card">
 
-<label>
-<input type="checkbox" value="Arm Curl">
-Arm Curl
-</label>
+                <div class="form-group">
 
-<label>
-<input type="checkbox" value="Ankle Lift">
-Ankle Lift
-</label>
+                    <label>Select Exercises</label>
 
-</div>
+                    <div class="exercise-list">
 
-</div>
+                        <label>
+                            <input type="checkbox" value="Squats">
+                            Squats
+                        </label>
 
-<div id="exerciseConfig" class="exercise-config"></div>
+                        <label>
+                            <input type="checkbox" value="Arm Curl">
+                            Arm Curl
+                        </label>
 
-<button id="startWorkoutBtn" class="start-btn">
-Start Workout
-</button>
+                        <label>
+                            <input type="checkbox" value="Ankle Lift">
+                            Ankle Lift
+                        </label>
 
-</div>
+                    </div>
 
-</div>
+                </div>
 
-</div>
+                <div id="exerciseConfig" class="exercise-config"></div>
 
-<script src="js/setup.js"></script>
+                <button id="startWorkoutBtn" class="start-btn">
+                    Start Workout
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="js/setup.js"></script>
 
 </body>
+
 </html>
