@@ -1,31 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
-
     const workouts = JSON.parse(localStorage.getItem("workouts")) || []
-
     const weeklyData = [0,0,0,0,0,0,0]
-
     const exerciseTotals = {}
-
 
     workouts.forEach(workout => {
 
-        const date = new Date(workout.date || Date.now())
-        const day = date.getDay()
+        const exercises = workout.exercises || {}
 
-        const reps =
-            workout.totalReps ??
-            (workout.reps && workout.sets ? workout.reps * workout.sets : 0)
+        Object.keys(exercises).forEach(name => {
 
-        weeklyData[day] += reps
+            if (!exerciseTotals[name]) {
+                exerciseTotals[name] = 0
+            }
 
-        if (!exerciseTotals[workout.exercise]) {
-            exerciseTotals[workout.exercise] = 0
-        }
+            exerciseTotals[name] += exercises[name]
 
-        exerciseTotals[workout.exercise] += reps
+        })
 
     })
-
 
     const weeklyChart = new Chart(
         document.getElementById("weeklyChart"),
@@ -50,11 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     )
 
-
     const exerciseLabels = Object.keys(exerciseTotals)
     const exerciseValues = Object.values(exerciseTotals)
-
-
     const exerciseChart = new Chart(
         document.getElementById("exerciseChart"),
         {

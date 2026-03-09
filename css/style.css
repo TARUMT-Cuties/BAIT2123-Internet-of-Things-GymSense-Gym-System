@@ -104,6 +104,22 @@ header {
     opacity: 0.7;
 }
 
+.exercise-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.exercise-list label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1c1d3a;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
 
 
 /* ---------- Workout Page ---------- */

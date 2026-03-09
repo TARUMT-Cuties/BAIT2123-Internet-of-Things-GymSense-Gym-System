@@ -1,10 +1,11 @@
 const params = new URLSearchParams(window.location.search)
-
-const exerciseName = params.get("exercise") || "Squats"
+const exercises =
+    JSON.parse(decodeURIComponent(params.get("exercises"))) || ["Squats"]
 const targetSets = parseInt(params.get("sets")) || 4
 const targetReps = parseInt(params.get("reps")) || 12
 
-
+let currentExerciseIndex = 0
+let exerciseName = exercises[currentExerciseIndex]
 let currentReps = 0
 let currentSet = 1
 let calories = 0
@@ -29,7 +30,7 @@ const pauseBtn = document.getElementById("pauseBtn")
 const resumeBtn = document.getElementById("resumeBtn")
 const endBtn = document.getElementById("endButton")
 const endingText = document.getElementById("endingText")
-
+const exerciseReps = {}
 
 exerciseText.textContent = exerciseName
 setText.textContent = `${currentSet} / ${targetSets}`
@@ -37,7 +38,9 @@ repsText.textContent = currentReps
 caloriesText.textContent = calories
 rirText.textContent = rir
 
-
+exercises.forEach(ex => {
+    exerciseReps[ex] = 0
+})
 
 function updateStopwatch() {
 
@@ -63,6 +66,7 @@ function updateWorkout() {
     }
 
     currentReps += 1
+    exerciseReps[exerciseName] += 1
     calories += 2
 
     rir = Math.max(0, targetReps - currentReps)
@@ -71,20 +75,29 @@ function updateWorkout() {
     caloriesText.textContent = calories
     rirText.textContent = rir
 
-    if (currentReps >= targetReps) {
+if (currentReps >= targetReps) {
 
-        currentSet += 1
-        currentReps = 0
-        rir = targetReps
+    currentSet++
+    currentReps = 0
 
-        if (currentSet > targetSets) {
+    if (currentSet > targetSets) {
+
+        currentExerciseIndex++
+
+        if (currentExerciseIndex >= exercises.length) {
             finishWorkout()
             return
         }
 
-        setText.textContent = `${currentSet} / ${targetSets}`
+        exerciseName = exercises[currentExerciseIndex]
+
+        exerciseText.textContent = exerciseName
+
+        currentSet = 1
     }
 
+    setText.textContent = `${currentSet} / ${targetSets}`
+    }
 }
 
 
@@ -134,13 +147,10 @@ function finishWorkout() {
     clearInterval(stopwatchInterval)
 
     const workoutData = {
-
-        exercise: exerciseName,
-        totalReps: (currentSet - 1) * targetReps + currentReps,
+        exercises: exerciseReps,
         calories: calories,
         duration: elapsedSeconds,
         date: new Date().toISOString()
-
     }
 
     let workouts = JSON.parse(localStorage.getItem("workouts")) || []
