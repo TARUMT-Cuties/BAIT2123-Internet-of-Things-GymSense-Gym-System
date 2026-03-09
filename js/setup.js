@@ -77,7 +77,40 @@ exerciseCheckboxes.forEach(checkbox => {
 
         exerciseConfig.appendChild(container)
 
-        addSetRow(setsContainer)
+        const previousExercise =
+            lastWorkout?.find(ex => ex.exercise === exerciseName)
+
+        if (previousExercise) {
+
+            previousExercise.sets.forEach(set => {
+
+                const row = document.createElement("div")
+
+                const repsInput = document.createElement("input")
+                repsInput.type = "number"
+                repsInput.className = "repInput"
+                repsInput.min = "0"
+                repsInput.value = set.reps
+
+                const weightInput = document.createElement("input")
+                weightInput.type = "number"
+                weightInput.className = "weightInput"
+                weightInput.min = "0"
+                weightInput.value = set.weight
+
+                row.append(`Set ${setsContainer.children.length + 1}: `)
+                row.appendChild(repsInput)
+                row.appendChild(weightInput)
+
+                setsContainer.appendChild(row)
+
+            })
+
+        } else {
+
+            addSetRow(setsContainer)
+
+        }
 
         addButton.onclick = () => addSetRow(setsContainer)
 
@@ -144,7 +177,6 @@ function addSetRow(parent){
 startButton.addEventListener("click", () => {
 
     const workout = []
-
     const exerciseBlocks = document.querySelectorAll("#exerciseConfig > div")
 
     if (exerciseBlocks.length === 0) {

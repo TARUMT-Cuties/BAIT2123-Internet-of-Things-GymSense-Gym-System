@@ -318,22 +318,25 @@ header {
     margin-top: 8px;
 }
 
-.addSet, .removeSet {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
+.addSet, .removeSet{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    cursor:pointer;
 }
 
-.addSet {
-    background: linear-gradient(135deg,#8aa2ff,#6be1ff);
-    color: white;
+.addSet{
+    margin-top:10px;
+    background:linear-gradient(135deg,#8aa2ff,#6be1ff);
+    color:white;
 }
 
-.removeSet {
-    background: linear-gradient(135deg,#ff6b6b,#ff8bd6);
-    color: white;
+.removeSet{
+    margin-top:8px;
+    background:linear-gradient(135deg,#ff8bd6,#ff6b6b);
+    color:white;
 }
 
 .setup-card {
