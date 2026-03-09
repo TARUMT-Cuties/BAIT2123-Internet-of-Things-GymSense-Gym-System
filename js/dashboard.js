@@ -6,11 +6,12 @@ const workoutCount = workouts.length
 
 workouts.forEach(workout => {
 
-    const reps =
-        workout.totalReps ??
-        (workout.reps && workout.sets ? workout.reps * workout.sets : 0)
+    const exercises = workout.exercises || {}
 
-    totalReps += reps
+    Object.values(exercises).forEach(reps => {
+        totalReps += reps
+    })
+
     totalCalories += workout.calories || 0
 
 })
@@ -40,7 +41,6 @@ if (startButton) {
 
         startButton.disabled = true
         startButton.textContent = "Preparing workout..."
-
         loadingText.textContent = "Opening setup..."
 
         setTimeout(() => {
