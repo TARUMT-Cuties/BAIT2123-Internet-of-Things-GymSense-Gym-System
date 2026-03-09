@@ -92,6 +92,17 @@ if (repeatBtn && lastWorkout) {
 
         })
 
+        setTimeout(() => {
+
+            const startBtn = document.getElementById("startWorkoutBtn")
+
+            startBtn.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            })
+
+        }, 100)
+
     })
 
 }
