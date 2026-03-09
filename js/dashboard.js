@@ -1,9 +1,52 @@
-const data = {
-reps:32,
-calories:180,
-exercise:"Squats"
-};
+const workouts = JSON.parse(localStorage.getItem("workouts")) || []
 
-document.getElementById("reps").textContent = data.reps;
-document.getElementById("calories").textContent = data.calories;
-document.getElementById("exercise").textContent = data.exercise;
+let totalReps = 0
+let totalCalories = 0
+const workoutCount = workouts.length
+
+workouts.forEach(workout => {
+
+    const reps =
+        workout.totalReps ??
+        (workout.reps && workout.sets ? workout.reps * workout.sets : 0)
+
+    totalReps += reps
+    totalCalories += workout.calories || 0
+
+})
+
+const repsElement = document.getElementById("repsStat")
+const caloriesElement = document.getElementById("caloriesStat")
+const streakElement = document.getElementById("streakStat")
+
+if (repsElement) {
+    repsElement.textContent = totalReps
+}
+
+if (caloriesElement) {
+    caloriesElement.textContent = totalCalories
+}
+
+if (streakElement) {
+    streakElement.textContent = workoutCount
+}
+
+const startButton = document.getElementById("startButton")
+const loadingText = document.getElementById("loadingText")
+
+if (startButton) {
+
+    startButton.addEventListener("click", () => {
+
+        startButton.disabled = true
+        startButton.textContent = "Preparing workout..."
+
+        loadingText.textContent = "Opening setup..."
+
+        setTimeout(() => {
+            window.location.href = "setup.html"
+        }, 500)
+
+    })
+
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Workout Setup</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <div class="setup-container">
+
+        <h1 class="setup-title">Workout Setup</h1>
+
+        <div class="setup-card">
+
+            <div class="form-group">
+                <label for="exerciseSelect">Exercise</label>
+
+                <select id="exerciseSelect">
+                    <option value="Squats">Squats</option>
+                    <option value="Arm Curl">Arm Curl</option>
+                    <option value="Ankle Lift">Ankle Lift</option>
+                </select>
+            </div>
+
+
+            <div class="form-group">
+                <label for="sets">Number of Sets</label>
+
+                <input
+                    type="number"
+                    id="sets"
+                    min="1"
+                    max="10"
+                    value="4"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="targetReps">Reps per Set</label>
+
+                <input
+                    type="number"
+                    id="targetReps"
+                    min="1"
+                    max="50"
+                    value="12"
+                >
+            </div>
+
+
+            <button id="startWorkoutBtn" class="start-btn">
+                Start Workout
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="js/setup.js"></script>
+
+</body>
+</html>

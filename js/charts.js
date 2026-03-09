@@ -1,49 +1,85 @@
-const repsChart = new Chart(
-document.getElementById('repsChart'),
-{
-type:'line',
+document.addEventListener("DOMContentLoaded", () => {
 
-data:{
-labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    const workouts = JSON.parse(localStorage.getItem("workouts")) || []
 
-datasets:[{
-label:'Reps',
+    const weeklyData = [0,0,0,0,0,0,0]
 
-data:[20,35,40,28,50,65,45],
-
-borderColor:'#ff8bd6',
-backgroundColor:'rgba(255,139,214,0.2)',
-tension:0.4
-}]
-},
-
-options:{
-plugins:{legend:{display:false}},
-scales:{
-y:{beginAtZero:true}
-}
-}
-});
+    const exerciseTotals = {}
 
 
-const calorieChart = new Chart(
-document.getElementById('calorieChart'),
-{
-type:'bar',
+    workouts.forEach(workout => {
 
-data:{
-labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        const date = new Date(workout.date || Date.now())
+        const day = date.getDay()
 
-datasets:[{
-data:[100,120,90,140,180,160,130],
-backgroundColor:'#8aa2ff'
-}]
-},
+        const reps =
+            workout.totalReps ??
+            (workout.reps && workout.sets ? workout.reps * workout.sets : 0)
 
-options:{
-plugins:{legend:{display:false}},
-scales:{
-y:{beginAtZero:true}
-}
-}
-});
+        weeklyData[day] += reps
+
+        if (!exerciseTotals[workout.exercise]) {
+            exerciseTotals[workout.exercise] = 0
+        }
+
+        exerciseTotals[workout.exercise] += reps
+
+    })
+
+
+    const weeklyChart = new Chart(
+        document.getElementById("weeklyChart"),
+        {
+            type: "line",
+            data: {
+                labels: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+                datasets: [
+                    {
+                        data: weeklyData,
+                        borderColor: "#ff8bd6",
+                        backgroundColor: "rgba(255,139,214,0.2)",
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        }
+    )
+
+
+    const exerciseLabels = Object.keys(exerciseTotals)
+    const exerciseValues = Object.values(exerciseTotals)
+
+
+    const exerciseChart = new Chart(
+        document.getElementById("exerciseChart"),
+        {
+            type: "doughnut",
+            data: {
+                labels: exerciseLabels,
+                datasets: [
+                    {
+                        data: exerciseValues,
+                        backgroundColor: [
+                            "#ff8bd6",
+                            "#8aa2ff",
+                            "#6ef3c5"
+                        ]
+                    }
+                ]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
+            }
+        }
+    )
+
+})

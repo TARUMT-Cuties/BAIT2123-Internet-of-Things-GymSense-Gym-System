@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Gym IoT Dashboard</title>
+
+<title>GymSense Dashboard</title>
 
 <link rel="stylesheet" href="css/style.css">
 
@@ -12,71 +12,63 @@
 
 <body>
 
-<div class="container">
+<div class="dashboard">
 
-    <aside class="sidebar">
-        <h2>GymSense</h2>
+<header>
 
-        <ul>
-            <li class="active">Dashboard</li>
-            <li>Workout</li>
-            <li>Analytics</li>
-            <li>History</li>
-            <li>Settings</li>
-        </ul>
-    </aside>
+<h1>GymSense</h1>
+<p class="subtitle">Welcome back, Yuki</p>
+
+</header>
 
 
-    <main class="main">
+<section class="overview">
 
-        <header class="header">
-            <h1>Workout Dashboard</h1>
-            <div class="profile">
-                <span>Yuki</span>
-            </div>
-        </header>
+<div class="card">
+    <h3>Total Reps</h3>
+    <p id="repsStat">0</p>
+</div>
 
+<div class="card">
+    <h3>Calories Burned</h3>
+    <p id="caloriesStat">0</p>
+</div>
 
-        <section class="cards">
+<div class="card">
+    <h3>Workout Count</h3>
+    <p id="streakStat">0</p>
+</div>
 
-            <div class="card">
-                <h3>Total Reps Today</h3>
-                <p id="reps">24</p>
-            </div>
-
-            <div class="card">
-                <h3>Calories Burned</h3>
-                <p id="calories">130</p>
-            </div>
-
-            <div class="card">
-                <h3>Current Exercise</h3>
-                <p id="exercise">Squats</p>
-            </div>
-
-        </section>
+</section>
 
 
-        <section class="charts">
+<section class="charts">
 
-            <div class="chart-card">
-                <h3>Weekly Reps</h3>
-                <canvas id="repsChart"></canvas>
-            </div>
+<div class="chart-card">
+<h3>Weekly Activity</h3>
+<canvas id="weeklyChart"></canvas>
+</div>
 
-            <div class="chart-card">
-                <h3>Calories Trend</h3>
-                <canvas id="calorieChart"></canvas>
-            </div>
+<div class="chart-card">
+<h3>Exercise Distribution</h3>
+<canvas id="exerciseChart"></canvas>
+</div>
 
-        </section>
+</section>
 
-    </main>
+
+<section class="start-workout">
+
+<button id="startButton">Start Workout</button>
+
+<p id="loadingText"></p>
+
+</section>
 
 </div>
 
-<script src="js/charts.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/charts.js"></script>
 
 </body>
 </html>
