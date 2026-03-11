@@ -5,7 +5,6 @@ let totalCalories = 0
 const workoutCount = workouts.length
 
 workouts.forEach(workout => {
-
     const exercises = workout.exercises || {}
 
     Object.values(exercises).forEach(reps => {
@@ -13,7 +12,6 @@ workouts.forEach(workout => {
     })
 
     totalCalories += workout.calories || 0
-
 })
 
 const repsElement = document.getElementById("repsStat")
@@ -46,7 +44,5 @@ if (startButton) {
         setTimeout(() => {
             window.location.href = "setup.html"
         }, 500)
-
     })
-
 }

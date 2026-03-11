@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const weeklyData = [0,0,0,0,0,0,0]
 
     workouts.forEach(workout => {
-
         const date = new Date(workout.date)
         const day = date.getDay()
         const exercises = workout.exercises || {}
@@ -15,7 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
             sessionReps += reps
         })
 
-
         Object.entries(exercises).forEach(([name, reps]) => {
             if (!exerciseTotals[name]) {
                 exerciseTotals[name] = 0
@@ -23,9 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             exerciseTotals[name] += reps
         })
-
         weeklyData[day] += sessionReps
-
     })
 
     const weeklyChart = new Chart(
@@ -79,5 +75,4 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     )
-
 })

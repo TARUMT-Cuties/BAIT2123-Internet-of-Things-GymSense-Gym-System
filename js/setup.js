@@ -1,19 +1,16 @@
 const startButton = document.getElementById("startWorkoutBtn")
 const exerciseConfig = document.getElementById("exerciseConfig")
 const exerciseCheckboxes = document.querySelectorAll(".exercise-list input")
-
 const lastWorkoutRaw = localStorage.getItem("lastWorkout")
 const lastWorkout = lastWorkoutRaw ? JSON.parse(lastWorkoutRaw) : null
 
 if (lastWorkout) {
-
     const card = document.getElementById("lastWorkoutCard")
     const content = document.getElementById("lastWorkoutContent")
 
     card.style.display = "block"
 
     lastWorkout.forEach(exercise => {
-
         const block = document.createElement("div")
         const title = document.createElement("h3")
 
@@ -21,32 +18,24 @@ if (lastWorkout) {
         block.appendChild(title)
 
         exercise.sets.forEach((set,index)=>{
-
             const line = document.createElement("p")
             const setNumber = index + 1
 
             line.textContent = `Set ${setNumber} - ${set.reps} reps - ${set.weight}kg`
 
             block.appendChild(line)
-
         })
-
         content.appendChild(block)
-
     })
-
 }
 
 const repeatBtn = document.getElementById("repeatWorkoutBtn")
 
 if (repeatBtn && lastWorkout) {
-
     repeatBtn.addEventListener("click", () => {
-
         exerciseConfig.innerHTML = ""
 
         lastWorkout.forEach(exercise => {
-
             const checkbox =
                 document.querySelector(`input[value="${exercise.exercise}"]`)
 
@@ -71,7 +60,6 @@ if (repeatBtn && lastWorkout) {
                 <span>Weight</span>
                 <span></span>
             `
-
             setsContainer.appendChild(headerRow)
 
             exercise.sets.forEach(set => {
@@ -89,36 +77,28 @@ if (repeatBtn && lastWorkout) {
             container.appendChild(addButton)
 
             exerciseConfig.appendChild(container)
-
         })
 
         setTimeout(() => {
-
             const startBtn = document.getElementById("startWorkoutBtn")
 
             startBtn.scrollIntoView({
                 behavior: "smooth",
                 block: "center"
             })
-
         }, 100)
-
     })
-
 }
 
 exerciseCheckboxes.forEach(checkbox => {
 
     checkbox.addEventListener("change", () => {
-
         const exerciseName = checkbox.value
         const existing = document.getElementById(`config-${exerciseName}`)
 
         if (!checkbox.checked) {
-
             if (existing) existing.remove()
             return
-
         }
 
         const container = document.createElement("div")
@@ -182,16 +162,13 @@ exerciseCheckboxes.forEach(checkbox => {
         addButton.onclick = () => addSetRow(setsContainer)
         container.scrollIntoView({behavior:"smooth",block:"center"})
     })
-
 })
 
 function addSetRow(parent, repsValue = "", weightValue = ""){
-
     const rows = parent.querySelectorAll(".setRow")
     const previousRow = rows[rows.length - 1]
 
     if (previousRow && repsValue === "" && weightValue === "") {
-
         const prevReps = previousRow.querySelector(".repInput")
         const prevWeight = previousRow.querySelector(".weightInput")
 
@@ -226,12 +203,10 @@ function addSetRow(parent, repsValue = "", weightValue = ""){
     deleteBtn.textContent = "X"
 
     deleteBtn.onclick = () => {
-
         const allRows = parent.querySelectorAll(".setRow")
         const exerciseBlock = parent.parentElement
 
         if (allRows.length === 1) {
-
             const exerciseName = exerciseBlock.querySelector("h3").textContent
             exerciseBlock.remove()
 
@@ -242,9 +217,7 @@ function addSetRow(parent, repsValue = "", weightValue = ""){
 
             return
         }
-
         row.remove()
-
         const updatedRows = parent.querySelectorAll(".setRow")
 
         updatedRows.forEach((r,index)=>{
@@ -253,41 +226,31 @@ function addSetRow(parent, repsValue = "", weightValue = ""){
         })
 
     }
-
     row.appendChild(label)
     row.appendChild(repsInput)
     row.appendChild(weightInput)
     row.appendChild(deleteBtn)
 
     parent.appendChild(row)
-
 }
 
 startButton.addEventListener("click", () => {
-
     const workout = []
-
     const exerciseBlocks = document.querySelectorAll("#exerciseConfig > div")
 
     if (exerciseBlocks.length === 0) {
-
         alert("Select at least one exercise")
         return
-
     }
 
     exerciseBlocks.forEach(block => {
-
         const exerciseName = block.querySelector("h3").innerText
         const rows = block.querySelectorAll(".setRow")
-
         const sets = []
 
         rows.forEach(row => {
-
             const repsInput = row.querySelector(".repInput")
             const weightInput = row.querySelector(".weightInput")
-
             const repsValue = repsInput.value
             const weightValue = weightInput.value
 
@@ -302,25 +265,19 @@ startButton.addEventListener("click", () => {
             const weight = Number(weightValue)
 
             sets.push({ reps, weight })
-
         })
 
         workout.push({
             exercise: exerciseName,
             sets: sets
         })
-
     })
 
     localStorage.setItem("lastWorkout", JSON.stringify(workout))
-
     startButton.disabled = true
     startButton.textContent = "Starting workout..."
 
     setTimeout(()=>{
-
         window.location.href = "workout.html"
-
     },500)
-
 })
