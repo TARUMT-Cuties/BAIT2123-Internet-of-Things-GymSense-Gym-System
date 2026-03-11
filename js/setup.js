@@ -124,7 +124,7 @@ exerciseCheckboxes.forEach(checkbox => {
         repsLabel.textContent = "Reps"
 
         const weightLabel = document.createElement("span")
-        weightLabel.textContent = "Weight"
+        weightLabel.textContent = "Weight (kg)"
 
         const deleteSpacer = document.createElement("span")
         deleteSpacer.textContent = ""
