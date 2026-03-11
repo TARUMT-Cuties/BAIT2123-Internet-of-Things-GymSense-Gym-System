@@ -395,7 +395,70 @@ header {
 
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
+.exercise-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
 
+.exercise-card {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 20px;
+
+    border-radius: 16px;
+
+    background: #1c1d3a;
+
+    border: 2px solid transparent;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+
+    user-select: none;
+}
+
+/* hover state so it looks clickable */
+
+.exercise-card:hover {
+
+    background: #26285c;
+
+    transform: translateY(-2px);
+
+    border-color: rgba(255,255,255,0.15);
+}
+
+/* hide real checkbox */
+
+.setupCheckbox {
+    display: none;
+}
+
+/* selected state */
+
+.exercise-card:has(.setupCheckbox:checked) {
+
+    border-color: #ff8bd6;
+
+    background: linear-gradient(
+        135deg,
+        rgba(255,139,214,0.2),
+        rgba(138,162,255,0.2)
+    );
+
+    box-shadow: 0 0 12px rgba(255,139,214,0.3);
+
+    font-weight: 600;
+}
 .form-group {
     display: flex;
     flex-direction: column;
