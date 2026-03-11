@@ -426,8 +426,6 @@ header {
     user-select: none;
 }
 
-/* hover state so it looks clickable */
-
 .exercise-card:hover {
 
     background: #26285c;
@@ -437,13 +435,9 @@ header {
     border-color: rgba(255,255,255,0.15);
 }
 
-/* hide real checkbox */
-
 .setupCheckbox {
     display: none;
 }
-
-/* selected state */
 
 .exercise-card:has(.setupCheckbox:checked) {
 
@@ -481,7 +475,15 @@ header {
     color: white;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
+input[type="number"] {
+    -moz-appearance: textfield;
+}
 
 /* ---------- Shared Start Button ---------- */
 
