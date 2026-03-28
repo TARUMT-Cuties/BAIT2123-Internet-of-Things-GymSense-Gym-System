@@ -1,78 +1,80 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const exerciseTotals = {}
-    const workouts = JSON.parse(localStorage.getItem("workouts")) || []
-    const weeklyData = [0,0,0,0,0,0,0]
 
-    workouts.forEach(workout => {
-        const date = new Date(workout.date)
-        const day = date.getDay()
-        const exercises = workout.exercises || {}
+    fetch('http://localhost:3000/workout')
+        .then(res => res.json())
+        .then(data => {
+            const exerciseTotals = {}
+            const weeklyData = [0,0,0,0,0,0,0]
 
-        let sessionReps = 0
+            if (!data || data.length === 0) {
+                console.log('No workout data from server yet')
+            } else {
+                data.forEach(entry => {
+                    const date = new Date(entry.time)
+                    const day = date.getDay()
+                    const name = entry.exercise || 'Unknown'
+                    const reps = entry.reps || 0
 
-        Object.values(exercises).forEach(reps => {
-            sessionReps += reps
-        })
-
-        Object.entries(exercises).forEach(([name, reps]) => {
-            if (!exerciseTotals[name]) {
-                exerciseTotals[name] = 0
+                    weeklyData[day] += reps
+                    exerciseTotals[name] = (exerciseTotals[name] || 0) + reps
+                })
             }
 
-            exerciseTotals[name] += reps
-        })
-        weeklyData[day] += sessionReps
-    })
-
-    const weeklyChart = new Chart(
-        document.getElementById("weeklyChart"),
-        {
-            type: "line",
-            data: {
-                labels: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-                datasets: [
-                    {
-                        data: weeklyData,
-                        borderColor: "#ff8bd6",
-                        backgroundColor: "rgba(255,139,214,0.2)",
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        }
-    )
-
-    const exerciseLabels = Object.keys(exerciseTotals)
-    const exerciseValues = Object.values(exerciseTotals)
-    const exerciseChart = new Chart(
-        document.getElementById("exerciseChart"),
-        {
-            type: "doughnut",
-            data: {
-                labels: exerciseLabels,
-                datasets: [
-                    {
-                        data: exerciseValues,
-                        backgroundColor: [
-                            "#ff8bd6",
-                            "#8aa2ff",
-                            "#6ef3c5"
+            new Chart(
+                document.getElementById("weeklyChart"),
+                {
+                    type: "line",
+                    data: {
+                        labels: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+                        datasets: [
+                            {
+                                data: weeklyData,
+                                borderColor: "#ff8bd6",
+                                backgroundColor: "rgba(255,139,214,0.2)",
+                                tension: 0.4
+                            }
                         ]
-                    }
-                ]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        position: "bottom"
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: false }
+                        }
                     }
                 }
-            }
-        }
-    )
+            )
+
+            const exerciseLabels = Object.keys(exerciseTotals)
+            const exerciseValues = Object.values(exerciseTotals)
+
+            new Chart(
+                document.getElementById("exerciseChart"),
+                {
+                    type: "doughnut",
+                    data: {
+                        labels: exerciseLabels.length > 0 ? exerciseLabels : ["No data"],
+                        datasets: [
+                            {
+                                data: exerciseValues.length > 0 ? exerciseValues : [1],
+                                backgroundColor: [
+                                    "#ff8bd6",
+                                    "#8aa2ff",
+                                    "#6ef3c5"
+                                ]
+                            }
+                        ]
+                    },
+                    options: {
+                        plugins: {
+                            legend: {
+                                position: "bottom"
+                            }
+                        }
+                    }
+                }
+            )
+        })
+        .catch(err => {
+            console.error('Failed to load chart data:', err)
+        })
+
 })

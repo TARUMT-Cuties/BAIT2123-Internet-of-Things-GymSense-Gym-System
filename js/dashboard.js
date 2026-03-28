@@ -30,6 +30,40 @@ if (streakElement) {
     streakElement.textContent = workoutCount
 }
 
+const sensorExercise = document.getElementById("sensorExercise")
+const sensorReps = document.getElementById("sensorReps")
+const sensorStatus = document.getElementById("sensorStatus")
+
+function fetchSensorData() {
+    fetch('http://localhost:3000/workout')
+        .then(res => res.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                sensorExercise.textContent = 'No workout data yet'
+                sensorReps.textContent = 'Reps: --'
+                sensorStatus.textContent = 'Connected — waiting for ESP32'
+                sensorStatus.style.color = '#4caf50'
+                return
+            }
+
+            const latest = data[data.length - 1]
+            sensorExercise.textContent = latest.exercise || '--'
+            sensorReps.textContent = `Reps: ${latest.reps ?? '--'}`
+            sensorStatus.textContent = 'Connected'
+            sensorStatus.style.color = '#4caf50'
+
+            const totalServerReps = data.reduce((sum, entry) => sum + (entry.reps || 0), 0)
+            if (repsElement) repsElement.textContent = totalServerReps
+        })
+        .catch(() => {
+            sensorStatus.textContent = 'Sensor offline'
+            sensorStatus.style.color = '#f44336'
+        })
+}
+
+fetchSensorData()
+setInterval(fetchSensorData, 2000)
+
 const startButton = document.getElementById("startButton")
 const loadingText = document.getElementById("loadingText")
 

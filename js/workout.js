@@ -35,6 +35,9 @@ let stopwatchInterval = null
 
 let paused = false
 
+let lastSensorReps = 0
+let sessionStartIndex = 0  // index in /workout array when this session started
+
 function getTargetSets() {
     return savedWorkout[currentExerciseIndex].sets.length
 }
@@ -72,9 +75,7 @@ function updateStopwatch() {
     stopwatchText.textContent = formatted
 }
 
-function updateWorkout() {
-
-    if (paused) return
+function addRep() {
 
     currentReps += 1
     exerciseReps[exerciseName] += 1
@@ -111,19 +112,84 @@ function updateWorkout() {
         targetReps = getTargetReps()
 
         setText.textContent = `${currentSet} / ${targetSets}`
+        sendControl(true, targetReps, targetSets)
     }
+}
+
+function sendControl(running, target, sets) {
+    const body = running
+        ? { running, target, sets }
+        : { running: false }
+    fetch('http://localhost:3000/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    }).catch(err => console.error('Control error:', err))
+}
+
+function fetchESP32Data() {
+
+    if (paused) return
+
+    fetch('http://localhost:3000/workout')
+        .then(res => res.json())
+        .then(data => {
+            if (!data) return
+
+            // Each new POST from ESP32 = 1 rep
+            const sessionEntries = data.slice(sessionStartIndex)
+            const totalEntries = sessionEntries.length
+
+            if (totalEntries > lastSensorReps) {
+                const newReps = totalEntries - lastSensorReps
+                console.log("New reps from ESP32:", newReps)
+                for (let i = 0; i < newReps; i++) {
+                    addRep()
+                }
+                lastSensorReps = totalEntries
+            }
+        })
+        .catch(err => console.error('ESP32 fetch error:', err))
 }
 
 function startWorkout() {
 
-    workoutInterval = setInterval(updateWorkout,2000)
-    stopwatchInterval = setInterval(updateStopwatch,1000)
+    if (!targetReps || targetReps <= 0) {
+        console.error("Invalid targetReps:", targetReps)
+        return
+    }
+    if (!targetSets || targetSets <= 0) {
+        console.error("Invalid targetSets:", targetSets)
+        return
+    }
+
+    // Record how many entries exist now so we only count NEW entries from this session
+    fetch('http://localhost:3000/workout')
+        .then(res => res.json())
+        .then(data => {
+            sessionStartIndex = data ? data.length : 0
+            lastSensorReps = 0
+            console.log("Workout started — target:", targetReps, "sets:", targetSets, "sessionStartIndex:", sessionStartIndex)
+            sendControl(true, targetReps, targetSets)
+            workoutInterval = setInterval(fetchESP32Data, 1000)
+            stopwatchInterval = setInterval(updateStopwatch, 1000)
+        })
+        .catch(() => {
+            sessionStartIndex = 0
+            lastSensorReps = 0
+            console.log("Workout started (offline) — target:", targetReps, "sets:", targetSets)
+            sendControl(true, targetReps, targetSets)
+            workoutInterval = setInterval(fetchESP32Data, 1000)
+            stopwatchInterval = setInterval(updateStopwatch, 1000)
+        })
 
 }
+
 
 pauseBtn.addEventListener("click", () => {
 
     paused = true
+    sendControl(false)
 
     clearInterval(stopwatchInterval)
 
@@ -135,6 +201,7 @@ pauseBtn.addEventListener("click", () => {
 resumeBtn.addEventListener("click", () => {
 
     paused = false
+    sendControl(true, targetReps, targetSets)
 
     stopwatchInterval = setInterval(updateStopwatch,1000)
 
@@ -147,6 +214,7 @@ endBtn.addEventListener("click", finishWorkout)
 
 function finishWorkout() {
 
+    sendControl(false, 0)
     clearInterval(workoutInterval)
     clearInterval(stopwatchInterval)
 
