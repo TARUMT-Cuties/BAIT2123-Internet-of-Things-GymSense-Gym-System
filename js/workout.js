@@ -118,7 +118,7 @@ function addRep() {
 
 function sendControl(running, target, sets) {
     const body = running
-        ? { running, target, sets }
+        ? { running, target, sets, exercise: exerciseName }
         : { running: false }
     fetch('http://localhost:3000/control', {
         method: 'POST',
