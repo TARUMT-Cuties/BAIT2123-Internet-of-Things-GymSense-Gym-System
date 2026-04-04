@@ -1,81 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>GymSense Dashboard</title>
-
-<link rel="stylesheet" href="css/style.css">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymSense Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
 
 <div class="dashboard">
 
-<header>
+    <header>
+        <h1>GymSense</h1>
+        <p class="subtitle">Welcome back</p>
+    </header>
 
-<h1>GymSense</h1>
-<p class="subtitle">Welcome back, Yuki</p>
+    <section class="overview">
+        <div class="card">
+            <h3>Total Reps</h3>
+            <p id="repsStat">0</p>
+        </div>
+        <div class="card">
+            <h3>Calories</h3>
+            <p id="caloriesStat">0</p>
+        </div>
+        <div class="card">
+            <h3>Workouts</h3>
+            <p id="streakStat">0</p>
+        </div>
+    </section>
 
-</header>
+    <section class="live-sensor">
+        <div class="card">
+            <h3>Live Sensor</h3>
+            <p id="sensorExercise">--</p>
+            <p id="sensorReps">Reps: --</p>
+            <p id="sensorStatus">Connecting...</p>
+        </div>
+    </section>
 
+    <section class="charts">
+        <div class="chart-card">
+            <h3>Weekly Activity</h3>
+            <canvas id="weeklyChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Exercise Distribution</h3>
+            <canvas id="exerciseChart"></canvas>
+        </div>
+    </section>
 
-<section class="overview">
-
-<div class="card">
-    <h3>Total Reps</h3>
-    <p id="repsStat">0</p>
-</div>
-
-<div class="card">
-    <h3>Calories Burned</h3>
-    <p id="caloriesStat">0</p>
-</div>
-
-<div class="card">
-    <h3>Workout Count</h3>
-    <p id="streakStat">0</p>
-</div>
-
-</section>
-
-
-<section class="live-sensor">
-
-<div class="card">
-    <h3>Live Sensor</h3>
-    <p id="sensorExercise">--</p>
-    <p id="sensorReps">Reps: --</p>
-    <p id="sensorStatus" style="font-size:0.75rem; color:#888;">Connecting...</p>
-</div>
-
-</section>
-
-
-<section class="charts">
-
-<div class="chart-card">
-<h3>Weekly Activity</h3>
-<canvas id="weeklyChart"></canvas>
-</div>
-
-<div class="chart-card">
-<h3>Exercise Distribution</h3>
-<canvas id="exerciseChart"></canvas>
-</div>
-
-</section>
-
-
-<section class="start-workout">
-
-<button id="startButton">Start Workout</button>
-
-<p id="loadingText"></p>
-
-</section>
+    <section class="start-workout">
+        <button id="startButton">Start Workout</button>
+        <p id="loadingText"></p>
+    </section>
 
 </div>
 

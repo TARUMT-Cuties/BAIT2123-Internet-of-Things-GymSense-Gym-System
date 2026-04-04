@@ -1,72 +1,56 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout Setup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-    <div class="setup-container">
+<div class="setup-outer">
 
-        <div>
-
-            <h1 class="setup-title">Workout Setup</h1>
-
-            <div id="lastWorkoutCard" class="setup-card" style="margin-bottom:20px; display:none;">
-
-                <h2>Last Workout</h2>
-
-                <div id="lastWorkoutContent"></div>
-
-                <button id="repeatWorkoutBtn" class="start-btn">
-                    Repeat Last Workout
-                </button>
-
-            </div>
-
-            <div class="setup-card">
-
-                <div class="form-group">
-
-                    <label>Select Exercises</label>
-
-                    <div class="exercise-list">
-
-                        <label class="exercise-card">
-                            <input type="checkbox" class="setupCheckbox" value="Squats">
-                            <span>Squats</span>
-                        </label>
-
-                        <label class="exercise-card">
-                            <input type="checkbox" class="setupCheckbox" value="Arm Curl">
-                            <span>Arm Curl</span>
-                        </label>
-
-                        <label class="exercise-card">
-                            <input type="checkbox" class="setupCheckbox" value="Ankle Lift">
-                            <span>Ankle Lift</span>
-                        </label>
-
-                    </div>
-
-                </div>
-
-                <div id="exerciseConfig" class="exercise-config"></div>
-
-                <button id="startWorkoutBtn" class="start-btn">
-                    Start Workout
-                </button>
-
-            </div>
-
-        </div>
-
+    <div class="page-nav">
+        <button class="back-btn" onclick="window.location.href='index.html'">&#8592;</button>
+        <h1 class="setup-title">Workout Setup</h1>
     </div>
 
-    <script src="js/setup.js"></script>
+    <div id="lastWorkoutCard" class="setup-card" style="display:none;">
+        <h2>Last Workout</h2>
+        <div id="lastWorkoutContent"></div>
+        <button id="repeatWorkoutBtn" class="start-btn">Repeat Last Workout</button>
+    </div>
+
+    <div class="setup-card">
+        <div class="form-group">
+            <label>Select Exercises</label>
+            <div class="exercise-list">
+                <label class="exercise-card">
+                    <input type="checkbox" class="setupCheckbox" value="Squats">
+                    <span>Squats</span>
+                </label>
+                <label class="exercise-card">
+                    <input type="checkbox" class="setupCheckbox" value="Arm Curl">
+                    <span>Arm Curl</span>
+                </label>
+                <label class="exercise-card">
+                    <input type="checkbox" class="setupCheckbox" value="Ankle Lift">
+                    <span>Ankle Lift</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="exerciseConfig" class="exercise-config"></div>
+
+        <button id="startWorkoutBtn" class="start-btn">Start Workout</button>
+    </div>
+
+</div>
+
+<script src="js/setup.js"></script>
 
 </body>
-
 </html>
