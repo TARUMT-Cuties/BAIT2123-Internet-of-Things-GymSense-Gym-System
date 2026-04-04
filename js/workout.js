@@ -116,9 +116,18 @@ function addRep() {
     }
 }
 
+function getESP32Exercise(name) {
+    const n = name.toLowerCase()
+    if (n.includes('squat')) return 'squat'
+    if (n.includes('curl'))  return 'curl'
+    return n
+}
+
 function sendControl(running, target, sets) {
+    const exercise = getESP32Exercise(exerciseName)
+    console.log("START", target, sets, exercise)
     const body = running
-        ? { running, target, sets, exercise: exerciseName }
+        ? { running, target, sets, exercise }
         : { running: false }
     fetch('http://localhost:3000/control', {
         method: 'POST',

@@ -1,0 +1,231 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+const char* ssid = "applejuice";
+const char* password = "12345678";
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// Ultrasonic
+#define trigPin 5
+#define echoPin 18
+
+// Buzzer
+#define buzzer 23
+
+// MPU6050
+const int MPU = 0x68;
+int16_t AcX, AcY, AcZ;
+
+// workout
+int reps = 0;
+int target = 12;
+int sets = 1;
+int currentSet = 1;
+
+bool down = false;
+bool running = false;
+String exercise = "squat";
+
+// ================= CONTROL =================
+void getControl() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("http://172.20.10.2:3000/control");
+
+    int code = http.GET();
+
+    if (code == 200) {
+      String payload = http.getString();
+      Serial.println(payload);
+
+      bool newRunning = payload.indexOf("\"running\":true") >= 0;
+
+      if (newRunning && !running) {
+        reps = 0;
+        currentSet = 1;
+        down = false;
+      }
+
+      running = newRunning;
+
+      int tIndex = payload.indexOf("target");
+      if (tIndex >= 0) target = payload.substring(tIndex + 8).toInt();
+
+      int sIndex = payload.indexOf("sets");
+      if (sIndex >= 0) sets = payload.substring(sIndex + 6).toInt();
+
+      if (payload.indexOf("curl") >= 0) {
+        exercise = "curl";
+      } else {
+        exercise = "squat";
+      }
+    }
+
+    http.end();
+  }
+}
+
+// ================= SEND =================
+void sendData(int reps, int setNum) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+
+    http.begin("http://172.20.10.2:3000/workout");
+    http.addHeader("Content-Type", "application/json");
+
+    String json = "{\"exercise\":\"" + exercise + "\",\"reps\":" + String(reps) + ",\"set\":" + String(setNum) + "}";
+
+    http.POST(json);
+    http.end();
+  }
+}
+
+// ================= SETUP =================
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting WiFi...");
+  }
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzer, OUTPUT);
+
+  Wire.begin(21,22);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("OLED FAIL");
+    while (1);
+  }
+
+  // MPU wake
+  Wire.beginTransmission(MPU);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission(true);
+
+  // START SCREEN
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0,20);
+  display.println("READY");
+  display.display();
+  delay(1000);
+}
+
+// ================= LOOP =================
+void loop() {
+
+  getControl();
+
+  // 🔥 ALWAYS SHOW DISPLAY
+  display.clearDisplay();
+  display.setTextSize(1);
+
+  display.setCursor(0,0);
+  display.println("SMART GYM");
+
+  display.setCursor(0,12);
+  display.print("Exercise: ");
+  display.println(exercise);
+
+  display.setCursor(0,24);
+  display.print("Set: ");
+  display.print(currentSet);
+  display.print("/");
+  display.println(sets);
+
+  display.setCursor(0,36);
+  display.print("Reps: ");
+  display.print(reps);
+  display.print("/");
+  display.println(target);
+
+  display.setCursor(0,52);
+  display.println(running ? "RUNNING" : "WAITING");
+
+  display.display();
+
+  // stop if not running
+  if (!running) {
+    delay(500);
+    return;
+  }
+
+  // ================= SQUAT =================
+  if (exercise == "squat") {
+
+    long duration;
+    float distance;
+
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    duration = pulseIn(echoPin, HIGH);
+    distance = duration * 0.034 / 2;
+
+    if (distance < 15) down = true;
+
+    if (distance > 25 && down) {
+      reps++;
+      down = false;
+      sendData(reps, currentSet);
+    }
+  }
+
+  // ================= CURL =================
+  else if (exercise == "curl") {
+
+    Wire.beginTransmission(MPU);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU, 6, true);
+
+    AcX = Wire.read() << 8 | Wire.read();
+    AcY = Wire.read() << 8 | Wire.read();
+    AcZ = Wire.read() << 8 | Wire.read();
+
+    // DEBUG
+    Serial.println(AcY);
+
+    if (AcY < -12000) down = true;
+
+    if (AcY > 12000 && down) {
+      reps++;
+      down = false;
+      sendData(reps, currentSet);
+    }
+  }
+
+  // ================= SET COMPLETE =================
+  if (reps >= target) {
+
+    digitalWrite(buzzer, HIGH);
+    delay(500);
+    digitalWrite(buzzer, LOW);
+
+    currentSet++;
+
+    if (currentSet > sets) {
+      running = false;
+    }
+
+    reps = 0;
+    down = false;
+  }
+
+  delay(200);
+}
