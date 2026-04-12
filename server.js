@@ -34,7 +34,7 @@ const VALID_EXERCISES = ['squat', 'curl', 'pushup'];
 
 // ── State ────────────────────────────────────────────────────────────────────
 let workouts = [];
-let control  = { running: false, target: 12, sets: 1, exercise: 'squat' };
+let control  = { running: false, placement: false, target: 12, sets: 1, exercise: 'squat' };
 
 // ── POST /workout  (ESP32 → backend) ─────────────────────────────────────────
 app.post('/workout', (req, res) => {
@@ -79,7 +79,14 @@ app.post('/control', (req, res) => {
   const { running } = req.body;
 
   if (running === false) {
-    control.running = false;
+    // Placement mode: tell ESP32 to show sensor-placement screen
+    const placement = req.body.placement === true;
+    const exercise  = req.body.exercise;
+    if (placement && VALID_EXERCISES.includes(exercise)) {
+      control = { ...control, running: false, placement: true, exercise };
+    } else {
+      control = { ...control, running: false, placement: false };
+    }
     console.log('Control updated:', control);
     return res.json(control);
   }
@@ -87,7 +94,7 @@ app.post('/control', (req, res) => {
   const { target, sets, exercise } = req.body;
 
   if (!VALID_EXERCISES.includes(exercise)) {
-    return res.status(400).json({ error: 'Invalid exercise. Must be "squat" or "curl".' });
+    return res.status(400).json({ error: 'Invalid exercise. Must be "squat", "curl", or "pushup".' });
   }
 
   const parsedTarget = Number(target);
@@ -100,7 +107,7 @@ app.post('/control', (req, res) => {
     return res.status(400).json({ error: 'Invalid sets. Must be a positive integer.' });
   }
 
-  control  = { running: true, target: parsedTarget, sets: parsedSets, exercise };
+  control  = { running: true, placement: false, target: parsedTarget, sets: parsedSets, exercise };
   workouts = [];   // clear old session data so the new workout starts fresh
   console.log('Control updated:', control);
   res.json(control);

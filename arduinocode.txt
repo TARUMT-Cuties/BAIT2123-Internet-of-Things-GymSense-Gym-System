@@ -29,6 +29,8 @@ bool squatDown  = false;
 bool curlDown   = false;
 bool pushupDown = false;
 
+bool placement = false;
+
 // timing
 unsigned long lastDisplay = 0;
 unsigned long lastControl = 0;
@@ -109,7 +111,8 @@ void getControl() {
       pushupDown = false;
     }
 
-    running = newRunning;
+    placement  = payload.indexOf("\"placement\":true") >= 0;
+    running    = newRunning;
     if (newExercise != "") exercise = newExercise;
 
     int tIndex = payload.indexOf("target");
@@ -131,27 +134,58 @@ void updateDisplay() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
 
-  display.setCursor(0,0);
-  display.println("SMART GYM");
+  if (placement) {
+    // ── Placement screen ──────────────────────────────────
+    display.setCursor(0, 0);
+    display.println("PLACE SENSOR");
 
-  display.setCursor(0,12);
-  display.print("Exercise: ");
-  display.println(exercise);
+    display.drawFastHLine(0, 10, 128, WHITE);
 
-  display.setCursor(0,24);
-  display.print("Set: ");
-  display.print(currentSet);
-  display.print("/");
-  display.println(sets);
+    display.setCursor(0, 14);
+    display.print("Exercise: ");
+    display.println(exercise);
 
-  display.setCursor(0,36);
-  display.print("Reps: ");
-  display.print(reps);
-  display.print("/");
-  display.println(target);
+    display.setCursor(0, 26);
+    if (exercise == "squat") {
+      display.println("Floor, facing");
+      display.setCursor(0, 35);
+      display.println("up at ur legs");
+    } else if (exercise == "pushup") {
+      display.println("Under chest,");
+      display.setCursor(0, 35);
+      display.println("facing up");
+    } else if (exercise == "curl") {
+      display.println("Strap MPU to");
+      display.setCursor(0, 35);
+      display.println("your forearm");
+    }
 
-  display.setCursor(0,52);
-  display.println(running ? "RUNNING" : "WAITING");
+    display.setCursor(0, 50);
+    display.println("Press READY on app");
+  } else {
+    // ── Normal workout screen ─────────────────────────────
+    display.setCursor(0, 0);
+    display.println("SMART GYM");
+
+    display.setCursor(0, 12);
+    display.print("Exercise: ");
+    display.println(exercise);
+
+    display.setCursor(0, 24);
+    display.print("Set: ");
+    display.print(currentSet);
+    display.print("/");
+    display.println(sets);
+
+    display.setCursor(0, 36);
+    display.print("Reps: ");
+    display.print(reps);
+    display.print("/");
+    display.println(target);
+
+    display.setCursor(0, 52);
+    display.println(running ? "RUNNING" : "WAITING");
+  }
 
   display.display();
 }

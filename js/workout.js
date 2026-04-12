@@ -10,6 +10,12 @@ const resumeBtn  = document.getElementById("resumeBtn")
 const endBtn     = document.getElementById("endButton")
 const endingText = document.getElementById("endingText")
 
+const placementOverlay     = document.getElementById("placementOverlay")
+const placementExerciseEl  = document.getElementById("placementExercise")
+const placementWhereEl     = document.getElementById("placementWhere")
+const placementHowEl       = document.getElementById("placementHow")
+const readyBtn             = document.getElementById("readyBtn")
+
 // ── Saved workout plan ────────────────────────────────────────────────────────
 const savedWorkoutRaw = localStorage.getItem("lastWorkout")
 const savedWorkout    = savedWorkoutRaw ? JSON.parse(savedWorkoutRaw) : null
@@ -33,6 +39,16 @@ let calories    = 0
 let paused      = false
 let workoutFinished = false
 let elapsedSeconds  = 0
+
+// ── Placement instructions per exercise ──────────────────────────────────────
+const PLACEMENT = {
+    squat:  { where: 'On the floor between your feet',       how: 'Point the sensor upward toward your legs' },
+    pushup: { where: 'On the floor directly under your chest', how: 'Point the sensor upward, facing your chest' },
+    curl:   { where: 'Strapped to your forearm',             how: 'Secure the MPU sensor firmly on your arm' }
+}
+
+// ── Placement state ───────────────────────────────────────────────────────────
+let awaitingPlacement = false
 
 // ── Connection state ──────────────────────────────────────────────────────────
 let ws            = null
@@ -85,7 +101,7 @@ function getESP32Exercise(name) {
 // ── Core rep update (shared by both WebSocket and polling paths) ──────────────
 // newCount = cumulative rep number for current set sent by the ESP32 (1, 2, 3…)
 function updateReps(newCount) {
-    if (paused || workoutFinished) return
+    if (paused || workoutFinished || awaitingPlacement) return
 
     const delta = newCount - currentReps
     if (delta <= 0) return
@@ -104,6 +120,26 @@ function updateReps(newCount) {
     }
 }
 
+// ── Sensor placement overlay ──────────────────────────────────────────────────
+function showPlacement() {
+    awaitingPlacement = true
+
+    const key  = getESP32Exercise(exerciseName)
+    const info = PLACEMENT[key] || { where: 'On your body', how: 'Position the sensor correctly' }
+
+    placementExerciseEl.textContent = exerciseName
+    placementWhereEl.textContent    = info.where
+    placementHowEl.textContent      = info.how
+    placementOverlay.classList.add('active')
+
+    // Tell Arduino to show the placement screen on OLED
+    fetch('http://localhost:3000/control', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ running: false, placement: true, exercise: key })
+    }).catch(() => {})
+}
+
 // ── Set / exercise advancement ────────────────────────────────────────────────
 function completeSet() {
     if (workoutFinished) return
@@ -111,7 +147,9 @@ function completeSet() {
     currentReps = 0
     currentSet++
 
-    if (currentSet > targetSets) {
+    const exerciseChanged = currentSet > targetSets
+
+    if (exerciseChanged) {
         currentExerciseIndex++
 
         if (currentExerciseIndex >= exercises.length) {
@@ -132,12 +170,16 @@ function completeSet() {
     rirText.textContent  = rir
     setText.textContent  = `${currentSet} / ${targetSets}`
 
-    sendControl(true, targetReps, targetSets)
+    if (exerciseChanged) {
+        showPlacement()           // different exercise — wait for sensor repositioning
+    } else {
+        sendControl(true, targetReps, targetSets)  // same exercise, next set — continue immediately
+    }
 }
 
 // ── WebSocket message handler ─────────────────────────────────────────────────
 function handleMessage(msg) {
-    if (paused || workoutFinished) return
+    if (paused || workoutFinished || awaitingPlacement) return
     if (msg.exercise !== getESP32Exercise(exerciseName)) return
 
     // For rep updates: skip done:true messages to avoid replaying the old rep
@@ -195,7 +237,7 @@ function stopPolling() {
 }
 
 function pollForReps() {
-    if (wsConnected || paused || workoutFinished) return
+    if (wsConnected || paused || workoutFinished || awaitingPlacement) return
 
     fetch('http://localhost:3000/workout')
         .then(r => r.json())
@@ -231,18 +273,27 @@ function sendControl(running, target, sets) {
     }).catch(err => console.error('Control error:', err))
 }
 
+// ── Ready button (dismisses placement overlay and starts counting) ────────────
+readyBtn.addEventListener('click', () => {
+    if (!awaitingPlacement) return
+    awaitingPlacement = false
+    placementOverlay.classList.remove('active')
+    sendControl(true, targetReps, targetSets)
+    // Start stopwatch only on the very first ready click
+    if (!stopwatchInterval) {
+        stopwatchInterval = setInterval(updateStopwatch, 1000)
+    }
+})
+
 // ── Start workout ─────────────────────────────────────────────────────────────
 function startWorkout() {
     if (!targetReps || targetReps <= 0) { console.error("Invalid targetReps:", targetReps); return }
     if (!targetSets || targetSets <= 0) { console.error("Invalid targetSets:", targetSets); return }
 
-    // sendControl clears the server's workouts array, so sessionStartIndex is
-    // always 0 for a fresh session — no pre-fetch needed.
     sessionStartIndex = 0
     lastPollIndex     = 0
-    sendControl(true, targetReps, targetSets)
     connectWS()
-    stopwatchInterval = setInterval(updateStopwatch, 1000)
+    showPlacement()   // always show sensor placement before the first exercise
 }
 
 // ── Pause / Resume ────────────────────────────────────────────────────────────

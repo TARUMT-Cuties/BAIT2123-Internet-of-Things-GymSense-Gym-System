@@ -11,6 +11,25 @@
 </head>
 <body>
 
+<!-- Sensor placement overlay — shown before each new exercise -->
+<div id="placementOverlay" class="placement-overlay">
+    <div class="placement-card">
+        <div class="placement-tag">Sensor Setup</div>
+        <div class="placement-exercise" id="placementExercise"></div>
+        <div class="placement-steps">
+            <div class="placement-step">
+                <span class="step-label">WHERE</span>
+                <span id="placementWhere"></span>
+            </div>
+            <div class="placement-step">
+                <span class="step-label">HOW</span>
+                <span id="placementHow"></span>
+            </div>
+        </div>
+        <button id="readyBtn" class="ready-btn">&#10003; I'm Ready</button>
+    </div>
+</div>
+
 <div class="workout-container">
 
     <h1>Workout Mode</h1>
