@@ -4,7 +4,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-//Change your wifi name and password here
 const char* ssid = "applejuice";
 const char* password = "12345678";
 
@@ -68,7 +67,6 @@ void sendData(int repCount, int setNum, bool done) {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-  //change ur laptop ip address here
   http.begin("http://172.20.10.3:3000/workout");
   http.addHeader("Content-Type", "application/json");
 
@@ -91,7 +89,6 @@ void getControl() {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-   //change ur laptop ip address here
   http.begin("http://172.20.10.3:3000/control");
 
   int code = http.GET();
