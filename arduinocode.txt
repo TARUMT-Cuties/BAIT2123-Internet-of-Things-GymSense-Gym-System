@@ -11,125 +11,125 @@ const char* password = "12345678";
 #define SCREEN_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Ultrasonic
+// Pins
 #define trigPin 5
 #define echoPin 18
+#define buzzer 19
 
-// Buzzer
-#define buzzer 23
-
-// MPU6050
+// MPU
 const int MPU = 0x68;
-int16_t AcX, AcY, AcZ;
+int16_t AcY;
 
 // workout
-int reps = 0;
-int target = 12;
-int sets = 1;
-int currentSet = 1;
-
-bool down = false;
+int reps = 0, target = 12, sets = 1, currentSet = 1;
 bool running = false;
 String exercise = "squat";
 
-// ================= CONTROL =================
-void getControl() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin("http://172.20.10.2:3000/control");
+bool squatDown  = false;
+bool curlDown   = false;
+bool pushupDown = false;
 
-    int code = http.GET();
+// timing
+unsigned long lastDisplay = 0;
+unsigned long lastControl = 0;
+unsigned long lastRepTime = 0;
+const unsigned long MIN_REP_INTERVAL = 1000; // ms — ignore reps faster than this
 
-    if (code == 200) {
-      String payload = http.getString();
-      Serial.println(payload);
+// ================= BUZZER =================
+void beepRep() {
+  digitalWrite(buzzer, HIGH);
+  delay(200);
+  digitalWrite(buzzer, LOW);
+}
 
-      bool newRunning = payload.indexOf("\"running\":true") >= 0;
+void beepSetDone() {
+  for (int i = 0; i < 2; i++) {
+    digitalWrite(buzzer, HIGH);
+    delay(300);
+    digitalWrite(buzzer, LOW);
+    delay(150);
+  }
+}
 
-      if (newRunning && !running) {
-        reps = 0;
-        currentSet = 1;
-        down = false;
-      }
-
-      running = newRunning;
-
-      int tIndex = payload.indexOf("target");
-      if (tIndex >= 0) target = payload.substring(tIndex + 8).toInt();
-
-      int sIndex = payload.indexOf("sets");
-      if (sIndex >= 0) sets = payload.substring(sIndex + 6).toInt();
-
-      if (payload.indexOf("curl") >= 0) {
-        exercise = "curl";
-      } else {
-        exercise = "squat";
-      }
-    }
-
-    http.end();
+void beepWorkoutDone() {
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(buzzer, HIGH);
+    delay(400);
+    digitalWrite(buzzer, LOW);
+    delay(150);
   }
 }
 
 // ================= SEND =================
-void sendData(int reps, int setNum) {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
+void sendData(int repCount, int setNum, bool done) {
+  if (WiFi.status() != WL_CONNECTED) return;
 
-    http.begin("http://172.20.10.2:3000/workout");
-    http.addHeader("Content-Type", "application/json");
+  HTTPClient http;
+  http.begin("http://172.20.10.3:3000/workout");
+  http.addHeader("Content-Type", "application/json");
 
-    String json = "{\"exercise\":\"" + exercise + "\",\"reps\":" + String(reps) + ",\"set\":" + String(setNum) + "}";
+  String json = "{";
+  json += "\"exercise\":\"" + exercise + "\",";
+  json += "\"reps\":" + String(repCount) + ",";
+  json += "\"set\":" + String(setNum) + ",";
+  json += "\"done\":" + String(done ? "true" : "false");
+  json += "}";
 
-    http.POST(json);
-    http.end();
-  }
+  http.POST(json);
+  http.end();
 }
 
-// ================= SETUP =================
-void setup() {
-  Serial.begin(115200);
+// ================= CONTROL =================
+void getControl() {
+  if (millis() - lastControl < 1000) return;
+  lastControl = millis();
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.println("Connecting WiFi...");
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  http.begin("http://172.20.10.3:3000/control");
+
+  int code = http.GET();
+
+  if (code == 200) {
+    String payload = http.getString();
+
+    bool newRunning = payload.indexOf("\"running\":true") >= 0;
+
+    String newExercise = "";
+    if (payload.indexOf("\"exercise\":\"curl\"") >= 0)   newExercise = "curl";
+    if (payload.indexOf("\"exercise\":\"squat\"") >= 0)  newExercise = "squat";
+    if (payload.indexOf("\"exercise\":\"pushup\"") >= 0) newExercise = "pushup";
+
+    if ((newRunning && !running) || newExercise != exercise) {
+      reps = 0;
+      currentSet = 1;
+      squatDown  = false;
+      curlDown   = false;
+      pushupDown = false;
+    }
+
+    running = newRunning;
+    if (newExercise != "") exercise = newExercise;
+
+    int tIndex = payload.indexOf("target");
+    if (tIndex >= 0) target = payload.substring(tIndex + 8).toInt();
+
+    int sIndex = payload.indexOf("sets");
+    if (sIndex >= 0) sets = payload.substring(sIndex + 6).toInt();
   }
 
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(buzzer, OUTPUT);
-
-  Wire.begin(21,22);
-
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println("OLED FAIL");
-    while (1);
-  }
-
-  // MPU wake
-  Wire.beginTransmission(MPU);
-  Wire.write(0x6B);
-  Wire.write(0);
-  Wire.endTransmission(true);
-
-  // START SCREEN
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setCursor(0,20);
-  display.println("READY");
-  display.display();
-  delay(1000);
+  http.end();
 }
 
-// ================= LOOP =================
-void loop() {
+// ================= DISPLAY =================
+void updateDisplay() {
+  if (millis() - lastDisplay < 200) return;
+  lastDisplay = millis();
 
-  getControl();
-
-  // 🔥 ALWAYS SHOW DISPLAY
   display.clearDisplay();
   display.setTextSize(1);
+  display.setTextColor(WHITE);
 
   display.setCursor(0,0);
   display.println("SMART GYM");
@@ -154,78 +154,145 @@ void loop() {
   display.println(running ? "RUNNING" : "WAITING");
 
   display.display();
+}
 
-  // stop if not running
-  if (!running) {
+// ================= SETUP =================
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    return;
   }
 
-  // ================= SQUAT =================
-  if (exercise == "squat") {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzer, OUTPUT);
 
-    long duration;
-    float distance;
+  // 🔥 TEST BUZZER (IMPORTANT)
+  digitalWrite(buzzer, HIGH);
+  delay(500);
+  digitalWrite(buzzer, LOW);
+
+  Wire.begin(21,22);
+  Wire.setClock(100000);
+  delay(100);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(20,20);
+  display.println("READY");
+  display.display();
+  delay(1000);
+
+  // MPU wake
+  Wire.beginTransmission(MPU);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission(true);
+}
+
+// ================= LOOP =================
+void loop() {
+
+  getControl();
+  updateDisplay();
+
+  if (!running) return;
+
+  // ===== SQUAT =====
+  if (exercise == "squat") {
 
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
-
     digitalWrite(trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
 
-    duration = pulseIn(echoPin, HIGH);
-    distance = duration * 0.034 / 2;
+    long duration = pulseIn(echoPin, HIGH, 30000);
+    float distance = duration * 0.034 / 2;
 
-    if (distance < 15) down = true;
+    if (distance > 0 && distance < 15) squatDown = true;
 
-    if (distance > 25 && down) {
+    if (distance > 25 && squatDown && millis() - lastRepTime >= MIN_REP_INTERVAL) {
       reps++;
-      down = false;
-      sendData(reps, currentSet);
+      squatDown = false;
+      lastRepTime = millis();
+
+      beepRep();
+      sendData(reps, currentSet, false);
     }
   }
 
-  // ================= CURL =================
-  else if (exercise == "curl") {
+  // ===== PUSHUP =====
+  else if (exercise == "pushup") {
+
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    long duration = pulseIn(echoPin, HIGH, 30000);
+    float distance = duration * 0.034 / 2;
+
+    // Sensor faces down from chest: close to floor = down, far = up
+    if (distance > 0 && distance < 10) pushupDown = true;
+
+    if (distance > 20 && pushupDown && millis() - lastRepTime >= MIN_REP_INTERVAL) {
+      reps++;
+      pushupDown = false;
+      lastRepTime = millis();
+
+      beepRep();
+      sendData(reps, currentSet, false);
+    }
+  }
+
+  // ===== CURL =====
+  else {
 
     Wire.beginTransmission(MPU);
     Wire.write(0x3B);
     Wire.endTransmission(false);
     Wire.requestFrom(MPU, 6, true);
 
-    AcX = Wire.read() << 8 | Wire.read();
-    AcY = Wire.read() << 8 | Wire.read();
-    AcZ = Wire.read() << 8 | Wire.read();
+    if (Wire.available() == 6) {
+      Wire.read(); Wire.read();
+      AcY = Wire.read() << 8 | Wire.read();
+    }
 
-    // DEBUG
-    Serial.println(AcY);
+    if (AcY < -12000) curlDown = true;
 
-    if (AcY < -12000) down = true;
-
-    if (AcY > 12000 && down) {
+    if (AcY > 12000 && curlDown && millis() - lastRepTime >= MIN_REP_INTERVAL) {
       reps++;
-      down = false;
-      sendData(reps, currentSet);
+      curlDown = false;
+      lastRepTime = millis();
+
+      beepRep();
+      sendData(reps, currentSet, false);
     }
   }
 
-  // ================= SET COMPLETE =================
+  // ===== SET DONE =====
   if (reps >= target) {
 
-    digitalWrite(buzzer, HIGH);
-    delay(500);
-    digitalWrite(buzzer, LOW);
+    sendData(target, currentSet, true);
 
     currentSet++;
+    reps = 0;
+    squatDown  = false;
+    curlDown   = false;
+    pushupDown = false;
 
     if (currentSet > sets) {
       running = false;
+      currentSet = 1;
+      beepWorkoutDone();
+    } else {
+      beepSetDone();
     }
-
-    reps = 0;
-    down = false;
   }
-
-  delay(200);
 }

@@ -19,7 +19,8 @@
   "homepage": "https://github.com/TARUMT-Cuties/BAIT2123-Internet-of-Things-GymSense-Gym-System#readme",
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "ws": "^8.20.0"
   },
   "description": ""
 }
