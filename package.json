@@ -20,7 +20,9 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "firebase-admin": "^12.7.0",
     "ws": "^8.20.0"
   },
-  "description": ""
+  "description": "REMINDER!!\r Dont change my arduino code, if you MUST, please make a backup for my version(I highlyyy recommend dont)\r Any problem while running the sensor, please ask me first before asking chatgpt because sometime chatgpt are stupid",
+  "type": "commonjs"
 }

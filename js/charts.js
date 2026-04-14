@@ -9,8 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!data || data.length === 0) {
                 console.log('No workout data from server yet')
             } else {
+                const now = new Date()
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
                 data.forEach(entry => {
-                    const date = new Date(entry.time)
+                    // Include new format (isFinal: true, status: 'Completed') or old format (done: true)
+                    const isNewCompleted = entry.isFinal === true && entry.status === 'Completed'
+                    const isOldCompleted = entry.done === true
+                    if (!isNewCompleted && !isOldCompleted) return
+
+                    const date = new Date(Number(entry.timestamp))
+                    if (isNaN(date.getTime())) return // Invalid timestamp
+                    
+                    // Only include records from last 7 days
+                    if (date < sevenDaysAgo || date > now) return
+
                     const day = date.getDay()
                     const name = entry.exercise || 'Unknown'
                     const reps = entry.reps || 0
