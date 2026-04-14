@@ -1,34 +1,40 @@
-const workouts = JSON.parse(localStorage.getItem("workouts")) || []
-
-let totalReps = 0
-let totalCalories = 0
-const workoutCount = workouts.length
-
-workouts.forEach(workout => {
-    const exercises = workout.exercises || {}
-
-    Object.values(exercises).forEach(reps => {
-        totalReps += reps
-    })
-
-    totalCalories += workout.calories || 0
-})
-
 const repsElement = document.getElementById("repsStat")
 const caloriesElement = document.getElementById("caloriesStat")
 const streakElement = document.getElementById("streakStat")
 
-if (repsElement) {
-    repsElement.textContent = totalReps
+// ── Load summary stats from final workout records ────────────────────────────
+function loadSummaryStats() {
+    fetch('http://localhost:3000/workout')
+        .then(res => res.json())
+        .then(data => {
+            let totalReps = 0
+            let totalCalories = 0
+            let workoutCount = 0
+
+            if (data && Array.isArray(data)) {
+                // Filter to final records only (isFinal: true)
+                const finalRecords = data.filter(record => record.isFinal === true)
+                
+                finalRecords.forEach(record => {
+                    const reps = record.reps || 0
+                    totalReps += reps
+                    // Calculate calories: 2 calories per rep
+                    totalCalories += reps * 2
+                    workoutCount++
+                })
+            }
+
+            if (repsElement) repsElement.textContent = totalReps
+            if (caloriesElement) caloriesElement.textContent = totalCalories
+            if (streakElement) streakElement.textContent = workoutCount
+        })
+        .catch(err => {
+            console.log('Error loading summary stats:', err)
+        })
 }
 
-if (caloriesElement) {
-    caloriesElement.textContent = totalCalories
-}
-
-if (streakElement) {
-    streakElement.textContent = workoutCount
-}
+loadSummaryStats()
+setInterval(loadSummaryStats, 3000)
 
 const sensorExercise = document.getElementById("sensorExercise")
 const sensorReps = document.getElementById("sensorReps")
@@ -51,9 +57,6 @@ function fetchSensorData() {
             sensorReps.textContent = `Reps: ${latest.reps ?? '--'}`
             sensorStatus.textContent = 'Connected'
             sensorStatus.style.color = '#4caf50'
-
-            const totalServerReps = data.reduce((sum, entry) => sum + (entry.reps || 0), 0)
-            if (repsElement) repsElement.textContent = totalServerReps
         })
         .catch(() => {
             sensorStatus.textContent = 'Sensor offline'
