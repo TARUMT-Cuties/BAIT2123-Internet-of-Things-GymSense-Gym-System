@@ -13,10 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
                 data.forEach(entry => {
-                    // Include new format (isFinal: true, status: 'Completed') or old format (done: true)
-                    const isNewCompleted = entry.isFinal === true && entry.status === 'Completed'
-                    const isOldCompleted = entry.done === true
-                    if (!isNewCompleted && !isOldCompleted) return
+                    // Only include final records (isFinal: true) - both Completed and Stopped
+                    if (entry.isFinal !== true) return
 
                     const date = new Date(Number(entry.timestamp))
                     if (isNaN(date.getTime())) return // Invalid timestamp
