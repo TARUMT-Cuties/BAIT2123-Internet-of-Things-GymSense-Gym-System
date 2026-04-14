@@ -31,10 +31,13 @@ STEPS TO RUN GYM SENSOR (\* means there are more detail below)
              http.begin("http://XXX.XX.XX.X:3000/workout"); \* Refer to below how to find IP address
 
 5.  Download code from github and open in Visual Studio Code
-    3.1 Open terminal (ctrl + ~ )
-    3.2 run this code:
-    - npm init -y
-    - npm install express
+
+6. Go to command prompt, cd your project
+   For example(mine):
+   cd C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System
+   then run
+   npm init -y
+   npm install express
 
 Your setout is DONE
 
