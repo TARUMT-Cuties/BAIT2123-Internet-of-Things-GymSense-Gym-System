@@ -313,17 +313,31 @@ resumeBtn.addEventListener("click", () => {
     pauseBtn.style.background = "#3436a8"
 })
 
-endBtn.addEventListener("click", finishWorkout)
+endBtn.addEventListener("click", () => {
+    finishWorkout()
+})
 
-// ── Finish workout ────────────────────────────────────────────────────────────
-function finishWorkout() {
+// ── Finish workout ─────────// wei got added line 325 to 327───────────────────────────────────────────────────
+async function finishWorkout() {
     if (workoutFinished) return
     workoutFinished = true
+
+    endBtn.disabled        = true
+    endBtn.textContent     = "Saving Workout"
+    endingText.textContent = "Saving..."
 
     sendControl(false)
     clearInterval(stopwatchInterval)
     stopPolling()
-    if (ws) ws.close()
+
+    // wei got added line 334 to 340
+    if (ws) {
+        try {
+            ws.close()
+        } catch (e) {
+            console.warn('WS close warning:', e)
+        }
+    }
 
     const workoutData = {
         exercises: exerciseReps,
@@ -336,11 +350,38 @@ function finishWorkout() {
     workouts.push(workoutData)
     localStorage.setItem("workouts", JSON.stringify(workouts))
 
-    endBtn.disabled        = true
-    endBtn.textContent     = "Saving Workout"
+    // If user has any reps on the current exercise, save as stopped final record
+    if (currentReps > 0) {
+        const currentExerciseESP32 = getESP32Exercise(exerciseName)
+        try {
+            const res = await fetch('http://localhost:3000/stopWorkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    exercise: currentExerciseESP32,
+                    reps: currentReps,
+                    set: currentSet
+                }),
+                keepalive: true
+            })
+
+            if (!res.ok) {
+                const text = await res.text()
+                console.error('Stop workout save failed:', text)
+            } else {
+                const result = await res.json()
+                console.log('Stopped workout saved:', result)
+            }
+        } catch (err) {
+            console.error('Stop workout error:', err)
+        }
+    }
+
     endingText.textContent = "Workout saved"
 
-    setTimeout(() => { window.location.href = "index.html" }, 1000)
+    setTimeout(() => {
+        window.location.href = "index.html"
+    }, 1200)
 }
 
 startWorkout()

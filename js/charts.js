@@ -1,3 +1,13 @@
+// ── Exercise display name mapping ──────────────────────────────────────────
+function getExerciseDisplayName(exerciseName) {
+    const mapping = {
+        'squat': 'Squat',
+        'pushup': 'Push-up',
+        'curl': 'Arm Curl'
+    }
+    return mapping[exerciseName] || exerciseName
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
     fetch('http://localhost:3000/workout')
@@ -9,14 +19,27 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!data || data.length === 0) {
                 console.log('No workout data from server yet')
             } else {
+                const now = new Date()
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
                 data.forEach(entry => {
-                    const date = new Date(entry.time)
+                    // Only include final records (isFinal: true) - both Completed and Stopped
+                    if (entry.isFinal !== true) return
+
+                    const date = new Date(Number(entry.timestamp))
+                    if (isNaN(date.getTime())) return // Invalid timestamp
+                    
+                    // Only include records from last 7 days
+                    if (date < sevenDaysAgo || date > now) return
+
                     const day = date.getDay()
                     const name = entry.exercise || 'Unknown'
                     const reps = entry.reps || 0
 
                     weeklyData[day] += reps
-                    exerciseTotals[name] = (exerciseTotals[name] || 0) + reps
+                    // Map exercise name for display
+                    const displayName = getExerciseDisplayName(name)
+                    exerciseTotals[displayName] = (exerciseTotals[displayName] || 0) + reps
                 })
             }
 

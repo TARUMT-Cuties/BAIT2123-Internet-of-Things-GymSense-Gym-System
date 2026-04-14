@@ -1,7 +1,11 @@
-const http      = require('http');
-const express   = require('express');
-const cors      = require('cors');
-const WebSocket = require('ws');
+const http              = require('http');
+const express           = require('express');
+const cors              = require('cors');
+const WebSocket         = require('ws');
+const { 
+  saveWorkoutToFirebase, 
+  fetchAllWorkoutsFromFirebase 
+} = require('./firebase');
 
 const app  = express();
 const port = 3000;
@@ -37,7 +41,7 @@ let workouts = [];
 let control  = { running: false, placement: false, target: 12, sets: 1, exercise: 'squat' };
 
 // ── POST /workout  (ESP32 → backend) ─────────────────────────────────────────
-app.post('/workout', (req, res) => {
+app.post('/workout', async (req, res) => {
   const { exercise, reps, set, done } = req.body;
 
   if (!VALID_EXERCISES.includes(exercise)) {
@@ -52,11 +56,20 @@ app.post('/workout', (req, res) => {
     reps,
     set:  typeof set  === 'number'  ? set  : null,
     done: done === true,
-    time: new Date()
+    timestamp: Date.now()
   };
+
+  // If completed, mark as final
+  if (done === true) {
+    data.isFinal = true;
+    data.status = 'Completed';
+  }
 
   workouts.push(data);
   console.log('Received:', data);
+
+  // Save to Firebase Realtime Database
+  await saveWorkoutToFirebase(data);
 
   // Push to every connected browser tab instantly
   broadcast(data);
@@ -64,9 +77,52 @@ app.post('/workout', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── POST /stopWorkout  (frontend → backend when End Workout is clicked) ──────
+app.post('/stopWorkout', async (req, res) => {
+  const { exercise, reps, set } = req.body;
+
+  // Only save if reps > 0
+  if (!reps || reps <= 0) {
+    return res.status(400).json({ error: 'No reps completed. Stopped workout not saved.' });
+  }
+
+  if (!VALID_EXERCISES.includes(exercise)) {
+    return res.status(400).json({ error: 'Invalid exercise.' });
+  }
+
+  const stoppedRecord = {
+    exercise,
+    reps,
+    set: typeof set === 'number' ? set : null,
+    done: false,
+    isFinal: true,
+    status: 'Stopped',
+    timestamp: Date.now()
+  };
+
+  workouts.push(stoppedRecord);
+  console.log('Stopped workout saved:', stoppedRecord);
+
+  // Save to Firebase
+  await saveWorkoutToFirebase(stoppedRecord);
+
+  // Broadcast to connected clients
+  broadcast(stoppedRecord);
+
+  res.json({ ok: true });
+});
+
 // ── GET /workout  (frontend history fetch) ───────────────────────────────────
-app.get('/workout', (req, res) => {
-  res.json(workouts);
+app.get('/workout', async (req, res) => {
+  // Fetch latest workouts from Firebase
+  const firebaseWorkouts = await fetchAllWorkoutsFromFirebase();
+  
+  // Return Firebase data if available, otherwise return in-memory data
+  if (firebaseWorkouts.length > 0) {
+    res.json(firebaseWorkouts);
+  } else {
+    res.json(workouts);
+  }
 });
 
 // ── GET /control  (ESP32 polls this) ─────────────────────────────────────────
