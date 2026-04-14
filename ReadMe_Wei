@@ -1,0 +1,69 @@
+Steps:
+1) Follow Elisha's ReadMe.md file first.
+2) Install Node.js, check the command below in PowerShell 
+node -v 
+npm -v
+
+3) Get the project files clone/download from Github. [Example: C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System]
+4) Open PowerShell in the project folder and run -> cd C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System
+5) Install the project packages and run > npm install
+
+*IF PowerShell blocks npm*
+If you get the “running scripts is disabled” error, run this first in the same PowerShell window:
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Then, run
+>npm install
+
+6) Open the Firebase project
+   Project Name: Gymsensor
+
+7) Inside Firebase Console > Build → Realtime Database 
+
+Copy the database URL. It should look like this:
+https://gymsensor-ce1ec-default-rtdb.asia-southeast1.firebasedatabase.app/
+
+8) In Firebase Console>  Project settings → Service accounts → Generate new private key
+
+Save it in the project folder, for example:
+C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System\serviceAccountKey.json
+
+9) In PowerShell, inside the project folder, run: [Very Important!]
+
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System\serviceAccountKey.json"
+$env:FIREBASE_DATABASE_URL="https://gymsensor-ce1ec-default-rtdb.asia-southeast1.firebasedatabase.app/"
+
+10) Start the server run > node server.js
+will get something like this:
+
+http://localhost:3000
+
+11) To check whether access works or not 
+
+Open in browser:
+http://localhost:3000/control
+http://localhost:3000/workout
+
+12) Open the website frontend
+
+Every time open a new PowerShell window, must to set these two lines again before running node server.js:
+
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\xampp\htdocs\BAIT2123-Internet-of-Things-GymSense-Gym-System\serviceAccountKey.json"
+$env:FIREBASE_DATABASE_URL="https://gymsensor-ce1ec-default-rtdb.asia-southeast1.firebasedatabase.app/"
+
+13) Common problems!!!: 
+
+If npm install is blocked:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+If port 3000 is already in use, it usually means another Node server is already running. Close the old one with Ctrl + C first.
+
+If Firebase access fails, double-check:
+-the JSON key file path
+-the database URL
+-does inside the correct project folder
+-are using the same PowerShell window where the env vars were set
+
+
+
+
+
