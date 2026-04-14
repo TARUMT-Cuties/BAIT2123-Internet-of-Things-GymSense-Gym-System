@@ -1,3 +1,13 @@
+// ── Exercise display name mapping ──────────────────────────────────────────
+function getExerciseDisplayName(exerciseName) {
+    const mapping = {
+        'squat': 'Squat',
+        'pushup': 'Push-up',
+        'curl': 'Arm Curl'
+    }
+    return mapping[exerciseName] || exerciseName
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
     fetch('http://localhost:3000/workout')
@@ -27,7 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const reps = entry.reps || 0
 
                     weeklyData[day] += reps
-                    exerciseTotals[name] = (exerciseTotals[name] || 0) + reps
+                    // Map exercise name for display
+                    const displayName = getExerciseDisplayName(name)
+                    exerciseTotals[displayName] = (exerciseTotals[displayName] || 0) + reps
                 })
             }
 

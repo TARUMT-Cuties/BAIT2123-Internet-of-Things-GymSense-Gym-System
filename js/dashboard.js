@@ -2,6 +2,26 @@ const repsElement = document.getElementById("repsStat")
 const caloriesElement = document.getElementById("caloriesStat")
 const streakElement = document.getElementById("streakStat")
 
+// ── Exercise display name mapping ──────────────────────────────────────────
+function getExerciseDisplayName(exerciseName) {
+    const mapping = {
+        'squat': 'Squat',
+        'pushup': 'Push-up',
+        'curl': 'Arm Curl'
+    }
+    return mapping[exerciseName] || exerciseName
+}
+
+// ── Calories per rep by exercise ───────────────────────────────────────────
+function getCaloriesPerRep(exerciseName) {
+    const rates = {
+        'squat': 0.8,
+        'pushup': 0.6,
+        'curl': 0.4
+    }
+    return rates[exerciseName] || 0.5  // default fallback
+}
+
 // ── Load summary stats from final workout records ────────────────────────────
 function loadSummaryStats() {
     fetch('http://localhost:3000/workout')
@@ -17,15 +37,17 @@ function loadSummaryStats() {
                 
                 finalRecords.forEach(record => {
                     const reps = record.reps || 0
+                    const exercise = record.exercise || 'unknown'
                     totalReps += reps
-                    // Calculate calories: 2 calories per rep
-                    totalCalories += reps * 2
+                    // Calculate calories using exercise-specific rates
+                    const caloriesPerRep = getCaloriesPerRep(exercise)
+                    totalCalories += reps * caloriesPerRep
                     workoutCount++
                 })
             }
 
             if (repsElement) repsElement.textContent = totalReps
-            if (caloriesElement) caloriesElement.textContent = totalCalories
+            if (caloriesElement) caloriesElement.textContent = Math.round(totalCalories)
             if (streakElement) streakElement.textContent = workoutCount
         })
         .catch(err => {
@@ -53,7 +75,7 @@ function fetchSensorData() {
             }
 
             const latest = data[data.length - 1]
-            sensorExercise.textContent = latest.exercise || '--'
+            sensorExercise.textContent = getExerciseDisplayName(latest.exercise) || '--'
             sensorReps.textContent = `Reps: ${latest.reps ?? '--'}`
             sensorStatus.textContent = 'Connected'
             sensorStatus.style.color = '#4caf50'
@@ -122,7 +144,7 @@ function loadWorkoutHistory() {
 
             const rows = finalResults.map(record => {
                 const time = formatDate(record.timestamp)
-                const exercise = record.exercise || '--'
+                const exercise = getExerciseDisplayName(record.exercise) || '--'
                 const reps = record.reps ?? '--'
                 const set = record.set ?? '--'
                 // Use new status field if available, otherwise infer from old done field
