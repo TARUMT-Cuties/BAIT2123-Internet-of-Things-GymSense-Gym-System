@@ -4,13 +4,14 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 const admin = require('firebase-admin');
+const serviceAccount = require("./serviceAccountKey.json");
 
 // Initialize Firebase Admin SDK
 // This uses the GOOGLE_APPLICATION_CREDENTIALS environment variable
 // which should point to your Firebase service account JSON file
 admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-  databaseURL: process.env.FIREBASE_DATABASE_URL
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://gymsensor-ce1ec-default-rtdb.asia-southeast1.firebasedatabase.app/"
 });
 
 // Get reference to the Realtime Database
