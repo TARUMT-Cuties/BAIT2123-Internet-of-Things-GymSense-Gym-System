@@ -25,21 +25,22 @@ function getCaloriesPerRep(exerciseName) {
 // ── Load summary stats from final workout records ────────────────────────────
 function loadSummaryStats() {
     fetch('http://localhost:3000/workout')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Server error')
+            return res.json()
+        })
         .then(data => {
             let totalReps = 0
             let totalCalories = 0
             let workoutCount = 0
 
             if (data && Array.isArray(data)) {
-                // Filter to final records only (isFinal: true)
                 const finalRecords = data.filter(record => record.isFinal === true)
-                
+
                 finalRecords.forEach(record => {
                     const reps = record.reps || 0
                     const exercise = record.exercise || 'unknown'
                     totalReps += reps
-                    // Calculate calories using exercise-specific rates
                     const caloriesPerRep = getCaloriesPerRep(exercise)
                     totalCalories += reps * caloriesPerRep
                     workoutCount++
@@ -52,6 +53,9 @@ function loadSummaryStats() {
         })
         .catch(err => {
             console.log('Error loading summary stats:', err)
+            if (repsElement) repsElement.textContent = '--'
+            if (caloriesElement) caloriesElement.textContent = '--'
+            if (streakElement) streakElement.textContent = '--'
         })
 }
 
@@ -64,7 +68,10 @@ const sensorStatus = document.getElementById("sensorStatus")
 
 function fetchSensorData() {
     fetch('http://localhost:3000/workout')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Server error')
+            return res.json()
+        })
         .then(data => {
             if (!data || data.length === 0) {
                 sensorExercise.textContent = 'No workout data yet'
@@ -80,8 +87,11 @@ function fetchSensorData() {
             sensorStatus.textContent = 'Connected'
             sensorStatus.style.color = '#4caf50'
         })
-        .catch(() => {
-            sensorStatus.textContent = 'Sensor offline'
+        .catch((err) => {
+            console.log('Error loading sensor data:', err)
+            sensorExercise.textContent = '--'
+            sensorReps.textContent = 'Reps: --'
+            sensorStatus.textContent = 'Connection error'
             sensorStatus.style.color = '#f44336'
         })
 }
@@ -122,19 +132,19 @@ function formatDate(timestamp) {
 
 function loadWorkoutHistory() {
     fetch('http://localhost:3000/workout')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Server error')
+            return res.json()
+        })
         .then(data => {
             const tableBody = document.getElementById('historyTableBody')
-            
+
             if (!data || data.length === 0) {
                 tableBody.innerHTML = '<tr class="empty-state"><td colspan="5">No workout history yet</td></tr>'
                 return
             }
 
-            // Sort by timestamp newest first
             const sorted = [...data].sort((a, b) => new Date(Number(b.timestamp)) - new Date(Number(a.timestamp)))
-            
-            // Filter to show only final results: new format (isFinal: true) or old format (done: true)
             const finalResults = sorted.filter(record => record.isFinal === true || record.done === true)
 
             if (finalResults.length === 0) {
@@ -147,9 +157,10 @@ function loadWorkoutHistory() {
                 const exercise = getExerciseDisplayName(record.exercise) || '--'
                 const reps = record.reps ?? '--'
                 const set = record.set ?? '--'
-                // Use new status field if available, otherwise infer from old done field
+
                 let status = record.status || (record.done === true ? 'Completed' : 'Unknown')
                 let statusClass = 'status-in-progress'
+
                 if (record.status === 'Completed' || record.done === true) {
                     statusClass = 'status-completed'
                 } else if (record.status === 'Stopped') {
