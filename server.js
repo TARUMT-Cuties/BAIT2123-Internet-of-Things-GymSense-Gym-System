@@ -1,14 +1,15 @@
-const http              = require('http');
-const express           = require('express');
-const cors              = require('cors');
-const WebSocket         = require('ws');
-const { 
-  saveWorkoutToFirebase, 
+const http = require('http');
+const express = require('express');
+const cors = require('cors');
+const WebSocket = require('ws');
+
+const {
+  saveWorkoutToFirebase,
   fetchAllWorkoutsFromFirebase,
   clearAllWorkoutsFromFirebase
 } = require('./firebase');
 
-const app  = express();
+const app = express();
 const port = 3000;
 
 app.use(cors());
@@ -27,7 +28,7 @@ wss.on('connection', (ws) => {
 
 function broadcast(data) {
   const msg = JSON.stringify(data);
-  wss.clients.forEach(client => {
+  wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(msg);
     }
@@ -39,7 +40,13 @@ const VALID_EXERCISES = ['squat', 'curl', 'pushup'];
 
 // ── State ────────────────────────────────────────────────────────────────────
 let workouts = [];
-let control  = { running: false, placement: false, target: 12, sets: 1, exercise: 'squat' };
+let control = {
+  running: false,
+  placement: false,
+  target: 12,
+  sets: 1,
+  exercise: 'squat'
+};
 
 // ── POST /workout  (ESP32 → backend) ─────────────────────────────────────────
 app.post('/workout', async (req, res) => {
@@ -64,14 +71,23 @@ app.post('/workout', async (req, res) => {
       });
     }
 
+    const isDone = done === true;
+    const finalFlag = isFinal === true || isDone;
+
+    const resolvedStatus =
+      typeof status === 'string' && status.trim() !== ''
+        ? status
+        : (isDone ? 'Completed' : 'in-progress');
+
     const data = {
       exercise,
       reps,
       set: typeof set === 'number' ? set : null,
-      done: done === true,
-      status: typeof status === 'string' ? status : 'in-progress',
-      isFinal: isFinal === true,
-      time: new Date()
+      done: isDone,
+      isFinal: finalFlag,
+      status: resolvedStatus,
+      timestamp: Date.now(),
+      time: new Date().toISOString()
     };
 
     workouts.push(data);
@@ -85,13 +101,13 @@ app.post('/workout', async (req, res) => {
 
     broadcast(data);
 
-    res.json({
+    return res.json({
       ok: true,
       firebaseSaved
     });
   } catch (error) {
     console.error('POST /workout failed:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while saving workout data.'
     });
   }
@@ -99,37 +115,61 @@ app.post('/workout', async (req, res) => {
 
 // ── POST /stopWorkout  (frontend → backend when End Workout is clicked) ──────
 app.post('/stopWorkout', async (req, res) => {
-  const { exercise, reps, set } = req.body;
+  try {
+    const { exercise, reps, set } = req.body;
 
-  // Only save if reps > 0
-  if (!reps || reps <= 0) {
-    return res.status(400).json({ error: 'No reps completed. Stopped workout not saved.' });
+    if (!VALID_EXERCISES.includes(exercise)) {
+      return res.status(400).json({ error: 'Invalid exercise.' });
+    }
+
+    if (typeof reps !== 'number' || !Number.isFinite(reps) || reps < 0) {
+      return res.status(400).json({ error: 'Invalid reps value.' });
+    }
+
+    // Only save if user actually did some reps
+    if (reps <= 0) {
+      return res.status(400).json({
+        error: 'No reps completed. Stopped workout not saved.'
+      });
+    }
+
+    if (set != null && (!Number.isInteger(set) || set <= 0)) {
+      return res.status(400).json({ error: 'Invalid set value.' });
+    }
+
+    const stoppedRecord = {
+      exercise,
+      reps,
+      set: typeof set === 'number' ? set : null,
+      done: false,
+      isFinal: true,
+      status: 'Stopped',
+      timestamp: Date.now(),
+      time: new Date().toISOString()
+    };
+
+    workouts.push(stoppedRecord);
+    console.log('Stopped workout saved:', stoppedRecord);
+
+    let firebaseSaved = false;
+    try {
+      firebaseSaved = await saveWorkoutToFirebase(stoppedRecord);
+    } catch (firebaseError) {
+      console.error('Firebase save failed for stopped workout:', firebaseError);
+    }
+
+    broadcast(stoppedRecord);
+
+    return res.json({
+      ok: true,
+      firebaseSaved
+    });
+  } catch (error) {
+    console.error('POST /stopWorkout failed:', error);
+    return res.status(500).json({
+      error: 'Internal server error while stopping workout.'
+    });
   }
-
-  if (!VALID_EXERCISES.includes(exercise)) {
-    return res.status(400).json({ error: 'Invalid exercise.' });
-  }
-
-  const stoppedRecord = {
-    exercise,
-    reps,
-    set: typeof set === 'number' ? set : null,
-    done: false,
-    isFinal: true,
-    status: 'Stopped',
-    timestamp: Date.now()
-  };
-
-  workouts.push(stoppedRecord);
-  console.log('Stopped workout saved:', stoppedRecord);
-
-  // Save to Firebase
-  await saveWorkoutToFirebase(stoppedRecord);
-
-  // Broadcast to connected clients
-  broadcast(stoppedRecord);
-
-  res.json({ ok: true });
 });
 
 // ── GET /workout  (frontend history fetch) ───────────────────────────────────
@@ -152,7 +192,7 @@ app.get('/workout', async (req, res) => {
 
 // ── GET /control  (ESP32 polls this) ─────────────────────────────────────────
 app.get('/control', (req, res) => {
-  res.json(control);
+  return res.json(control);
 });
 
 // ── POST /control  (frontend → backend → ESP32 reads next poll) ──────────────
@@ -162,7 +202,7 @@ app.post('/control', (req, res) => {
 
     if (running === false) {
       const placement = req.body.placement === true;
-      const exercise  = req.body.exercise;
+      const exercise = req.body.exercise;
 
       if (placement && VALID_EXERCISES.includes(exercise)) {
         control = { ...control, running: false, placement: true, exercise };
@@ -204,13 +244,33 @@ app.post('/control', (req, res) => {
       exercise
     };
 
+    // Clear current in-memory session when a new workout starts
     workouts = [];
+
     console.log('Control updated:', control);
-    res.json(control);
+    return res.json(control);
   } catch (error) {
     console.error('POST /control failed:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while updating workout control.'
+    });
+  }
+});
+
+// ── Optional test route to clear Firebase workouts ───────────────────────────
+app.delete('/workout', async (req, res) => {
+  try {
+    const cleared = await clearAllWorkoutsFromFirebase();
+    workouts = [];
+
+    return res.json({
+      ok: true,
+      firebaseCleared: cleared
+    });
+  } catch (error) {
+    console.error('DELETE /workout failed:', error);
+    return res.status(500).json({
+      error: 'Failed to clear workout data.'
     });
   }
 });
