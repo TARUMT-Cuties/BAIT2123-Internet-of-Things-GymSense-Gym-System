@@ -187,5 +187,87 @@ function loadWorkoutHistory() {
         })
 }
 
+document.getElementById('downloadReport').addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const primaryColor = [74, 144, 226]; // GymSense Blue
+
+    // 1. FRONT PAGE: Overall Summary
+    doc.setFontSize(24);
+    doc.setTextColor(40, 44, 52);
+    doc.text('GymSense Progress Report', 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+
+    // Grab the summary stats from your dashboard cards
+    const totalReps = document.getElementById('repsStat').innerText;
+    const totalCals = document.getElementById('caloriesStat').innerText;
+    const totalWorkouts = document.getElementById('streakStat').innerText;
+
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Overall Statistics', 14, 45);
+    
+    doc.setFontSize(12);
+    doc.text(`• Total Volume: ${totalReps} Reps`, 20, 55);
+    doc.text(`• Estimated Calories: ${totalCals} kcal`, 20, 65);
+    doc.text(`• Sessions Completed: ${totalWorkouts}`, 20, 75);
+
+    // 2. DATA PROCESSING: Group rows by exercise
+    const historyData = [];
+    const rows = document.querySelectorAll('#historyTableBody tr');
+    
+    rows.forEach(row => {
+        if (row.classList.contains('empty-state')) return;
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 5) {
+            historyData.push({
+                time: cells[0].innerText,
+                exercise: cells[1].innerText,
+                reps: cells[2].innerText,
+                set: cells[3].innerText,
+                status: cells[4].innerText
+            });
+        }
+    });
+
+    // Get unique list of exercises performed
+    const exercises = [...new Set(historyData.map(item => item.exercise))];
+
+    // 3. GENERATE EXERCISE-SPECIFIC PAGES
+    exercises.forEach((exName) => {
+        doc.addPage(); // Every exercise gets its own page
+        
+        doc.setFontSize(20);
+        doc.setTextColor(74, 144, 226);
+        doc.text(`${exName} - Detailed History`, 14, 20);
+
+        // Filter data for just this specific exercise
+        const filteredData = historyData
+            .filter(item => item.exercise === exName)
+            .map(item => [item.time, item.reps, item.set, item.status]);
+
+        doc.autoTable({
+            startY: 30,
+            head: [['Date/Time', 'Reps', 'Sets', 'Final Status']],
+            body: filteredData,
+            theme: 'striped',
+            headStyles: { fillColor: primaryColor },
+            styles: { fontSize: 10, cellPadding: 5 }
+        });
+        
+        // Add footer with Page Number
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`GymSense Report - Page ${pageCount}`, 105, 285, { align: 'center' });
+    });
+
+    // 4. SAVE THE REPORT
+    doc.save(`GymSense_Log_${new Date().toISOString().slice(0,10)}.pdf`);
+}); 
+
 loadWorkoutHistory()
 setInterval(loadWorkoutHistory, 3000)

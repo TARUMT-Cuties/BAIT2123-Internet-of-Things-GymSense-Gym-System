@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -57,6 +59,10 @@
     <section class="start-workout">
         <button id="startButton">Start Workout</button>
         <p id="loadingText"></p>
+    </section>
+
+    <section class="report-section" style="text-align: center; margin: 20px 0;">
+        <button id="downloadReport" class="btn-report">Download Progress Report (PDF)</button>
     </section>
 
     <section class="workout-history">
