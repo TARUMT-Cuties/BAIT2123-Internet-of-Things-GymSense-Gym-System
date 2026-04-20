@@ -8,7 +8,7 @@ const {
   fetchAllWorkoutsFromFirebase 
 } = require('./firebase');
 
-const app  = express();
+const app = express();
 const port = 3000;
 
 app.use(cors());
@@ -32,7 +32,7 @@ wss.on('connection', (ws) => {
 
 function broadcast(data) {
   const msg = JSON.stringify(data);
-  wss.clients.forEach(client => {
+  wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(msg);
     }
@@ -44,135 +44,239 @@ const VALID_EXERCISES = ['squat', 'curl', 'pushup'];
 
 // ── State ────────────────────────────────────────────────────────────────────
 let workouts = [];
-let control  = { running: false, placement: false, target: 12, sets: 1, exercise: 'squat' };
+let control = {
+  running: false,
+  placement: false,
+  target: 12,
+  sets: 1,
+  exercise: 'squat'
+};
 
 // ── POST /workout  (ESP32 → backend) ─────────────────────────────────────────
 app.post('/workout', async (req, res) => {
-  const { exercise, reps, set, done } = req.body;
+  try {
+    const { exercise, reps, set, done, status, isFinal } = req.body;
 
-  if (!VALID_EXERCISES.includes(exercise)) {
-    return res.status(400).json({ error: 'Invalid exercise. Must be "squat" or "curl".' });
+    if (!VALID_EXERCISES.includes(exercise)) {
+      return res.status(400).json({
+        error: 'Invalid exercise. Must be "squat", "curl", or "pushup".'
+      });
+    }
+
+    if (typeof reps !== 'number' || !Number.isFinite(reps) || reps < 0) {
+      return res.status(400).json({
+        error: 'Invalid reps. Must be a non-negative number.'
+      });
+    }
+
+    if (set != null && (!Number.isInteger(set) || set <= 0)) {
+      return res.status(400).json({
+        error: 'Invalid set. Must be a positive integer.'
+      });
+    }
+
+    const isDone = done === true;
+    const finalFlag = isFinal === true || isDone;
+
+    const resolvedStatus =
+      typeof status === 'string' && status.trim() !== ''
+        ? status
+        : (isDone ? 'Completed' : 'in-progress');
+
+    const data = {
+      exercise,
+      reps,
+      set: typeof set === 'number' ? set : null,
+      done: isDone,
+      isFinal: finalFlag,
+      status: resolvedStatus,
+      timestamp: Date.now(),
+      time: new Date().toISOString()
+    };
+
+    workouts.push(data);
+
+    let firebaseSaved = false;
+    try {
+      firebaseSaved = await saveWorkoutToFirebase(data);
+    } catch (firebaseError) {
+      console.error('Firebase save failed:', firebaseError);
+    }
+
+    broadcast(data);
+
+    return res.json({
+      ok: true,
+      firebaseSaved
+    });
+  } catch (error) {
+    console.error('POST /workout failed:', error);
+    return res.status(500).json({
+      error: 'Internal server error while saving workout data.'
+    });
   }
-  if (typeof reps !== 'number' || !Number.isFinite(reps) || reps < 0) {
-    return res.status(400).json({ error: 'Invalid reps. Must be a non-negative number.' });
-  }
-
-  const data = {
-    exercise,
-    reps,
-    set:  typeof set  === 'number'  ? set  : null,
-    done: done === true,
-    timestamp: Date.now()
-  };
-
-  // If completed, mark as final
-  if (done === true) {
-    data.isFinal = true;
-    data.status = 'Completed';
-  }
-
-  workouts.push(data);
-  console.log('Received:', data);
-
-  // Save to Firebase Realtime Database
-  await saveWorkoutToFirebase(data);
-
-  // Push to every connected browser tab instantly
-  broadcast(data);
-
-  res.json({ ok: true });
 });
 
 // ── POST /stopWorkout  (frontend → backend when End Workout is clicked) ──────
 app.post('/stopWorkout', async (req, res) => {
-  const { exercise, reps, set } = req.body;
+  try {
+    const { exercise, reps, set } = req.body;
 
-  // Only save if reps > 0
-  if (!reps || reps <= 0) {
-    return res.status(400).json({ error: 'No reps completed. Stopped workout not saved.' });
+    if (!VALID_EXERCISES.includes(exercise)) {
+      return res.status(400).json({ error: 'Invalid exercise.' });
+    }
+
+    if (typeof reps !== 'number' || !Number.isFinite(reps) || reps < 0) {
+      return res.status(400).json({ error: 'Invalid reps value.' });
+    }
+
+    // Only save if user actually did some reps
+    if (reps <= 0) {
+      return res.status(400).json({
+        error: 'No reps completed. Stopped workout not saved.'
+      });
+    }
+
+    if (set != null && (!Number.isInteger(set) || set <= 0)) {
+      return res.status(400).json({ error: 'Invalid set value.' });
+    }
+
+    const stoppedRecord = {
+      exercise,
+      reps,
+      set: typeof set === 'number' ? set : null,
+      done: false,
+      isFinal: true,
+      status: 'Stopped',
+      timestamp: Date.now(),
+      time: new Date().toISOString()
+    };
+
+    workouts.push(stoppedRecord);
+    console.log('Stopped workout saved:', stoppedRecord);
+
+    let firebaseSaved = false;
+    try {
+      firebaseSaved = await saveWorkoutToFirebase(stoppedRecord);
+    } catch (firebaseError) {
+      console.error('Firebase save failed for stopped workout:', firebaseError);
+    }
+
+    broadcast(stoppedRecord);
+
+    return res.json({
+      ok: true,
+      firebaseSaved
+    });
+  } catch (error) {
+    console.error('POST /stopWorkout failed:', error);
+    return res.status(500).json({
+      error: 'Internal server error while stopping workout.'
+    });
   }
-
-  if (!VALID_EXERCISES.includes(exercise)) {
-    return res.status(400).json({ error: 'Invalid exercise.' });
-  }
-
-  const stoppedRecord = {
-    exercise,
-    reps,
-    set: typeof set === 'number' ? set : null,
-    done: false,
-    isFinal: true,
-    status: 'Stopped',
-    timestamp: Date.now()
-  };
-
-  workouts.push(stoppedRecord);
-  console.log('Stopped workout saved:', stoppedRecord);
-
-  // Save to Firebase
-  await saveWorkoutToFirebase(stoppedRecord);
-
-  // Broadcast to connected clients
-  broadcast(stoppedRecord);
-
-  res.json({ ok: true });
 });
 
 // ── GET /workout  (frontend history fetch) ───────────────────────────────────
 app.get('/workout', async (req, res) => {
-  // Fetch latest workouts from Firebase
-  const firebaseWorkouts = await fetchAllWorkoutsFromFirebase();
-  
-  // Return Firebase data if available, otherwise return in-memory data
-  if (firebaseWorkouts.length > 0) {
-    res.json(firebaseWorkouts);
-  } else {
-    res.json(workouts);
+  try {
+    try {
+      const firebaseWorkouts = await fetchAllWorkoutsFromFirebase();
+      return res.json(firebaseWorkouts);
+    } catch (firebaseError) {
+      console.error('Firebase fetch failed, fallback to local memory:', firebaseError);
+      return res.json(workouts);
+    }
+  } catch (error) {
+    console.error('GET /workout failed:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch workout history.'
+    });
   }
 });
 
 // ── GET /control  (ESP32 polls this) ─────────────────────────────────────────
 app.get('/control', (req, res) => {
-  res.json(control);
+  return res.json(control);
 });
 
 // ── POST /control  (frontend → backend → ESP32 reads next poll) ──────────────
 app.post('/control', (req, res) => {
-  const { running } = req.body;
+  try {
+    const { running } = req.body;
 
-  if (running === false) {
-    // Placement mode: tell ESP32 to show sensor-placement screen
-    const placement = req.body.placement === true;
-    const exercise  = req.body.exercise;
-    if (placement && VALID_EXERCISES.includes(exercise)) {
-      control = { ...control, running: false, placement: true, exercise };
-    } else {
-      control = { ...control, running: false, placement: false };
+    if (running === false) {
+      const placement = req.body.placement === true;
+      const exercise = req.body.exercise;
+
+      if (placement && VALID_EXERCISES.includes(exercise)) {
+        control = { ...control, running: false, placement: true, exercise };
+      } else {
+        control = { ...control, running: false, placement: false };
+      }
+
+      console.log('Control updated:', control);
+      return res.json(control);
     }
+
+    const { target, sets, exercise } = req.body;
+
+    if (!VALID_EXERCISES.includes(exercise)) {
+      return res.status(400).json({
+        error: 'Invalid exercise. Must be "squat", "curl", or "pushup".'
+      });
+    }
+
+    const parsedTarget = Number(target);
+    if (!Number.isInteger(parsedTarget) || parsedTarget <= 0) {
+      return res.status(400).json({
+        error: 'Invalid target. Must be a positive integer.'
+      });
+    }
+
+    const parsedSets = Number(sets);
+    if (!Number.isInteger(parsedSets) || parsedSets <= 0) {
+      return res.status(400).json({
+        error: 'Invalid sets. Must be a positive integer.'
+      });
+    }
+
+    control = {
+      running: true,
+      placement: false,
+      target: parsedTarget,
+      sets: parsedSets,
+      exercise
+    };
+
+    // Clear current in-memory session when a new workout starts
+    workouts = [];
+
     console.log('Control updated:', control);
     return res.json(control);
+  } catch (error) {
+    console.error('POST /control failed:', error);
+    return res.status(500).json({
+      error: 'Internal server error while updating workout control.'
+    });
   }
+});
 
-  const { target, sets, exercise } = req.body;
+// ── Optional test route to clear Firebase workouts ───────────────────────────
+app.delete('/workout', async (req, res) => {
+  try {
+    const cleared = await clearAllWorkoutsFromFirebase();
+    workouts = [];
 
-  if (!VALID_EXERCISES.includes(exercise)) {
-    return res.status(400).json({ error: 'Invalid exercise. Must be "squat", "curl", or "pushup".' });
+    return res.json({
+      ok: true,
+      firebaseCleared: cleared
+    });
+  } catch (error) {
+    console.error('DELETE /workout failed:', error);
+    return res.status(500).json({
+      error: 'Failed to clear workout data.'
+    });
   }
-
-  const parsedTarget = Number(target);
-  if (!Number.isInteger(parsedTarget) || parsedTarget <= 0) {
-    return res.status(400).json({ error: 'Invalid target. Must be a positive integer.' });
-  }
-
-  const parsedSets = Number(sets);
-  if (!Number.isInteger(parsedSets) || parsedSets <= 0) {
-    return res.status(400).json({ error: 'Invalid sets. Must be a positive integer.' });
-  }
-
-  control  = { running: true, placement: false, target: parsedTarget, sets: parsedSets, exercise };
-  workouts = [];   // clear old session data so the new workout starts fresh
-  console.log('Control updated:', control);
-  res.json(control);
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
