@@ -195,7 +195,7 @@ app.get('/workout', async (req, res) => {
 });
 
 // ── GET /control  (ESP32 polls this) ─────────────────────────────────────────
-app.get('http://172.20.10.3:3000/control', (req, res) => {
+app.get('http://192.168.137.1:3000/control', (req, res) => {
   return res.json(control);
 });
 
