@@ -87,9 +87,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         ]
                     },
                     options: {
+                        responsive: true,
                         plugins: {
                             legend: {
-                                position: "bottom"
+                                position: "bottom",
+                                labels: {
+                                    boxWidth: 10,
+                                    boxHeight: 10,
+                                    font: { size: 10 },
+                                    padding: 8
+                                }
                             }
                         }
                     }
