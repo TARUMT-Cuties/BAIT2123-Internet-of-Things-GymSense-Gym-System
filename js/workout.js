@@ -1,3 +1,6 @@
+const SERVER    = `http://${window.location.hostname}:3000`
+const WS_SERVER = `ws://${window.location.hostname}:3000`
+
 const exerciseText  = document.getElementById("exercise")
 const repsText      = document.getElementById("reps")
 const setText       = document.getElementById("set")
@@ -133,7 +136,7 @@ function showPlacement() {
     placementOverlay.classList.add('active')
 
     // Tell Arduino to show the placement screen on OLED
-    fetch('http://localhost:3000/control', {
+    fetch(`${SERVER}/control`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ running: false, placement: true, exercise: key })
@@ -198,7 +201,7 @@ function handleMessage(msg) {
 function connectWS() {
     if (workoutFinished) return
 
-    ws = new WebSocket('ws://localhost:3000')
+    ws = new WebSocket(WS_SERVER)
 
     ws.onopen = () => {
         wsConnected = true
@@ -239,7 +242,7 @@ function stopPolling() {
 function pollForReps() {
     if (wsConnected || paused || workoutFinished || awaitingPlacement) return
 
-    fetch('http://localhost:3000/workout')
+    fetch(`${SERVER}/workout`)
         .then(r => r.json())
         .then(data => {
             if (!Array.isArray(data)) return
@@ -266,7 +269,7 @@ function sendControl(running, target, sets) {
     const body = running
         ? { running, target, sets, exercise }
         : { running: false }
-    fetch('http://localhost:3000/control', {
+    fetch(`${SERVER}/control`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -354,7 +357,7 @@ async function finishWorkout() {
     if (currentReps > 0) {
         const currentExerciseESP32 = getESP32Exercise(exerciseName)
         try {
-            const res = await fetch('http://localhost:3000/stopWorkout', {
+            const res = await fetch(`${SERVER}/stopWorkout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

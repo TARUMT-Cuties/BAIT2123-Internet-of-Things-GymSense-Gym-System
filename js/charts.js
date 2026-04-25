@@ -10,7 +10,7 @@ function getExerciseDisplayName(exerciseName) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    fetch('http://localhost:3000/workout')
+    fetch(`${SERVER}/workout`)
         .then(res => res.json())
         .then(data => {
             const exerciseTotals = {}
