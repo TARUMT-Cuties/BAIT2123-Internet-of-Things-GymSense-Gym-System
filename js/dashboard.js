@@ -430,17 +430,90 @@ if (startButton) {
 }
 
 // ── Workout History ─────────────────────────────────────────────────────────────
+let allFinalRecords = []
+
 function formatDate(timestamp) {
     if (!timestamp) return 'Invalid time'
     const date = new Date(Number(timestamp))
     if (isNaN(date.getTime())) return 'Invalid time'
-    
     const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    const hh = String(date.getHours()).padStart(2, '0')
-    const min = String(date.getMinutes()).padStart(2, '0')
+    const mm   = String(date.getMonth() + 1).padStart(2, '0')
+    const dd   = String(date.getDate()).padStart(2, '0')
+    const hh   = String(date.getHours()).padStart(2, '0')
+    const min  = String(date.getMinutes()).padStart(2, '0')
     return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+}
+
+function getWeekStart(date) {
+    const d   = new Date(date)
+    const day = d.getDay() // 0 = Sun
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)) // back to Monday
+    d.setHours(0, 0, 0, 0)
+    return d
+}
+
+function formatWeekLabel(weekStart) {
+    const end  = new Date(weekStart)
+    end.setDate(end.getDate() + 6)
+    const o = { day: 'numeric', month: 'short' }
+    return weekStart.toLocaleDateString('en-GB', o) + ' – ' + end.toLocaleDateString('en-GB', o)
+}
+
+function renderHistoryTable(records) {
+    const tableBody = document.getElementById('historyTableBody')
+    if (!records || records.length === 0) {
+        tableBody.innerHTML = '<tr class="empty-state"><td colspan="5">No workouts for this week</td></tr>'
+        return
+    }
+    tableBody.innerHTML = records.map(record => {
+        const time     = formatDate(record.timestamp)
+        const exercise = getExerciseDisplayName(record.exercise) || '--'
+        const reps     = record.reps ?? '--'
+        const set      = record.set  ?? '--'
+        let status      = record.status || (record.done === true ? 'Completed' : 'Unknown')
+        let statusClass = 'status-in-progress'
+        if (record.status === 'Completed' || record.done === true) statusClass = 'status-completed'
+        else if (record.status === 'Stopped')                       statusClass = 'status-stopped'
+        return `<tr>
+            <td>${time}</td>
+            <td>${exercise}</td>
+            <td>${reps}</td>
+            <td>${set}</td>
+            <td class="${statusClass}">${status}</td>
+        </tr>`
+    }).join('')
+}
+
+function populateWeekFilter(records) {
+    const select   = document.getElementById('weekFilter')
+    const prevVal  = select.value
+
+    const weekMap  = new Map()
+    records.forEach(r => {
+        const ws  = getWeekStart(new Date(Number(r.timestamp)))
+        const key = ws.getTime()
+        if (!weekMap.has(key)) weekMap.set(key, ws)
+    })
+
+    const weeks = [...weekMap.entries()]
+        .sort((a, b) => b[0] - a[0]) // newest first
+        .map(([key, ws]) => `<option value="${key}">${formatWeekLabel(ws)}</option>`)
+
+    select.innerHTML = '<option value="all">All Time</option>' + weeks.join('')
+
+    // restore previous selection if it still exists
+    if ([...select.options].some(o => o.value === prevVal)) select.value = prevVal
+}
+
+function applyWeekFilter() {
+    const val = document.getElementById('weekFilter').value
+    if (val === 'all') { renderHistoryTable(allFinalRecords); return }
+    const from = new Date(Number(val))
+    const to   = new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000)
+    renderHistoryTable(allFinalRecords.filter(r => {
+        const d = new Date(Number(r.timestamp))
+        return d >= from && d < to
+    }))
 }
 
 function loadWorkoutHistory() {
@@ -451,54 +524,27 @@ function loadWorkoutHistory() {
         })
         .then(data => {
             const tableBody = document.getElementById('historyTableBody')
-
             if (!data || data.length === 0) {
                 tableBody.innerHTML = '<tr class="empty-state"><td colspan="5">No workout history yet</td></tr>'
                 return
             }
-
-            const sorted = [...data].sort((a, b) => new Date(Number(b.timestamp)) - new Date(Number(a.timestamp)))
-            const finalResults = sorted.filter(record => record.isFinal === true || record.done === true)
-
-            if (finalResults.length === 0) {
+            const sorted = [...data].sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+            allFinalRecords = sorted.filter(r => r.isFinal === true || r.done === true)
+            if (allFinalRecords.length === 0) {
                 tableBody.innerHTML = '<tr class="empty-state"><td colspan="5">No workout history yet</td></tr>'
                 return
             }
-
-            const rows = finalResults.map(record => {
-                const time = formatDate(record.timestamp)
-                const exercise = getExerciseDisplayName(record.exercise) || '--'
-                const reps = record.reps ?? '--'
-                const set = record.set ?? '--'
-
-                let status = record.status || (record.done === true ? 'Completed' : 'Unknown')
-                let statusClass = 'status-in-progress'
-
-                if (record.status === 'Completed' || record.done === true) {
-                    statusClass = 'status-completed'
-                } else if (record.status === 'Stopped') {
-                    statusClass = 'status-stopped'
-                }
-
-                return `
-                    <tr>
-                        <td>${time}</td>
-                        <td>${exercise}</td>
-                        <td>${reps}</td>
-                        <td>${set}</td>
-                        <td class="${statusClass}">${status}</td>
-                    </tr>
-                `
-            }).join('')
-
-            tableBody.innerHTML = rows
+            populateWeekFilter(allFinalRecords)
+            applyWeekFilter()
         })
         .catch(err => {
             console.log('Error loading workout history:', err)
-            const tableBody = document.getElementById('historyTableBody')
-            tableBody.innerHTML = '<tr class="empty-state"><td colspan="5">Unable to load history</td></tr>'
+            document.getElementById('historyTableBody').innerHTML =
+                '<tr class="empty-state"><td colspan="5">Unable to load history</td></tr>'
         })
 }
+
+document.getElementById('weekFilter').addEventListener('change', applyWeekFilter)
 
 document.getElementById('downloadReport').addEventListener('click', async () => {
     const btn = document.getElementById('downloadReport')
